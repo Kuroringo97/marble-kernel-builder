@@ -3,6 +3,7 @@ set -euo pipefail
 
 KERNEL_DIR="${KERNEL_DIR:-kernel-source}"
 ENABLE_SUSFS="${ENABLE_SUSFS:-false}"
+SUSFS_MANAGER_PATCH="${SUSFS_MANAGER_PATCH:-auto}"
 
 if [[ "${ENABLE_SUSFS}" != "true" ]]; then
   echo "SUSFS disabled"
@@ -55,7 +56,17 @@ if [[ -z "${manager_dir}" ]]; then
 fi
 
 manager_patch="${patch_root}/KernelSU/10_enable_susfs_for_ksu.patch"
-if [[ -f "${manager_patch}" ]]; then
+apply_manager_patch="${SUSFS_MANAGER_PATCH}"
+if [[ "${apply_manager_patch}" == "auto" ]]; then
+  apply_manager_patch="force"
+  if [[ "${manager_ref,,}" == *susfs* ]]; then
+    apply_manager_patch="skip"
+  fi
+fi
+
+if [[ "${apply_manager_patch}" == "skip" ]]; then
+  echo "Skipping SUSFS manager patch for ${manager_repo}@${manager_ref}"
+elif [[ -f "${manager_patch}" ]]; then
   pushd "${manager_dir}" >/dev/null
   patch -p1 < "${manager_patch}"
   popd >/dev/null

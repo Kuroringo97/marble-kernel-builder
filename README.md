@@ -22,6 +22,7 @@ The builder checks out the source fork in GitHub Actions, patches only the tempo
 | `susfs_kernel_branch` | `gki-android12-5.10` | SUSFS patch family for Marble's 5.10 kernel |
 | `susfs_ref` | empty | SUSFS branch, tag, or commit; required only for `custom` |
 | `susfs_expected_version` | empty | Optional custom ref guard, for example `v2.1.0` |
+| `susfs_manager_patch` | `auto` | `auto`, `force`, or `skip`; use `skip` for manager branches that already include SUSFS |
 | `build_scope` | `image-only` | `image-only` or `full` |
 | `enable_ccache` | `true` | Restore and save ccache |
 | `debug_artifacts` | `false` | Upload debug files on successful builds; failed runs upload available debug files automatically |
@@ -73,7 +74,7 @@ Checked on 2026-06-22.
 5. `manager=sukisu-ultra`, `enable_susfs=false`, `build_scope=image-only`
 6. Add `enable_susfs=true` only after the matching manager build succeeds.
 
-For the WildKernels GKI r4 style combo, use `manager=custom`, `custom_manager_repo=pershoot/KernelSU-Next`, `custom_manager_ref=f1b64f440f3cd170e2a86d7816bef26fbdee1caa`, `custom_setup_path=kernel/setup.sh`, `enable_susfs=true`, and `susfs_version=v2.1.0`.
+For a Wild-style SUSFS manager branch, use `manager=custom`, `custom_manager_repo=pershoot/KernelSU-Next`, `custom_manager_ref=dev-susfs`, `custom_setup_path=kernel/setup.sh`, `enable_susfs=true`, `susfs_version=v2.1.0`, and `susfs_manager_patch=auto`.
 
 ## Flashing Warning
 

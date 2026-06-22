@@ -11,7 +11,8 @@ Checked on 2026-06-22.
 | KernelSU | `tiann/KernelSU` | `main` | latest release `v3.2.4` |
 | KernelSU-Next | `KernelSU-Next/KernelSU-Next` | `dev` | latest release `v3.2.0` |
 | KernelSU-Next Wild pin | `pershoot/KernelSU-Next` | commit `f1b64f440f3cd170e2a86d7816bef26fbdee1caa` | WildKernels GKI r4 KernelSU-Next pin |
+| KernelSU-Next SUSFS branch | `pershoot/KernelSU-Next` | `dev-susfs` | manager branch with SUSFS integration |
 | SukiSU Ultra | `SukiSU-Ultra/SukiSU-Ultra` | `main` | latest release `v4.1.3` |
 | ReSukiSU | `ReSukiSU/ReSukiSU` | `main` | no GitHub release found; `kernel/setup.sh` exists |
 
-The workflow resolves branch, tag, and commit inputs to exact commits at run time and records them in `release/build-info.txt`. For SUSFS, the user chooses `susfs_version=v2.2.0`, `susfs_version=v2.1.0`, or `susfs_version=custom`. Custom mode uses `susfs_ref` and verifies `susfs_expected_version` when provided. For the WildKernels GKI r4 style combo, use `manager=custom`, `custom_manager_repo=pershoot/KernelSU-Next`, `custom_manager_ref=f1b64f440f3cd170e2a86d7816bef26fbdee1caa`, and `susfs_version=v2.1.0`.
+The workflow resolves branch, tag, and commit inputs to exact commits at run time and records them in `release/build-info.txt`. For SUSFS, the user chooses `susfs_version=v2.2.0`, `susfs_version=v2.1.0`, or `susfs_version=custom`. Custom mode uses `susfs_ref` and verifies `susfs_expected_version` when provided. `susfs_manager_patch=auto` applies the generic manager patch for normal refs and skips it for refs containing `susfs`, so branches such as `pershoot/KernelSU-Next@dev-susfs` can use their built-in manager integration.

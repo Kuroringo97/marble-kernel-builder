@@ -10,6 +10,7 @@ SUSFS_VERSION="${SUSFS_VERSION:-v2.2.0}"
 SUSFS_KERNEL_BRANCH="${SUSFS_KERNEL_BRANCH:-gki-android12-5.10}"
 SUSFS_REF="${SUSFS_REF:-}"
 SUSFS_EXPECTED_VERSION="${SUSFS_EXPECTED_VERSION:-}"
+SUSFS_MANAGER_PATCH="${SUSFS_MANAGER_PATCH:-auto}"
 CUSTOM_MANAGER_REPO="${CUSTOM_MANAGER_REPO:-}"
 CUSTOM_MANAGER_REF="${CUSTOM_MANAGER_REF:-}"
 CUSTOM_SETUP_PATH="${CUSTOM_SETUP_PATH:-kernel/setup.sh}"
@@ -47,6 +48,11 @@ fi
 case "${SUSFS_VERSION}" in
   v2.2.0|v2.1.0|custom) ;;
   *) echo "::error::SUSFS_VERSION must be v2.2.0, v2.1.0, or custom, got ${SUSFS_VERSION}"; exit 1 ;;
+esac
+
+case "${SUSFS_MANAGER_PATCH}" in
+  auto|force|skip) ;;
+  *) echo "::error::SUSFS_MANAGER_PATCH must be auto, force, or skip, got ${SUSFS_MANAGER_PATCH}"; exit 1 ;;
 esac
 
 if [[ "${ENABLE_SUSFS}" == "true" ]]; then
