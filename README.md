@@ -62,7 +62,16 @@ GitHub Actions checks out both repos separately, applies manager and SUSFS patch
 
 ---
 
-## ⚙️ Workflow Inputs
+## ⚙️ Workflows
+
+Two workflows are available:
+
+| Workflow | Use when |
+|---|---|
+| **Build Marble Kernel** (`build-marble.yml`) | Single manager build — full control over all inputs, custom refs, debugging |
+| **Build Marble Kernel (Matrix)** (`build-matrix.yml`) | Multi-manager release run — select multiple managers via checkboxes, all build in parallel with separate artifacts |
+
+### `build-marble.yml` Inputs
 
 | Input | Default | Description |
 |---|---|---|
@@ -80,6 +89,20 @@ GitHub Actions checks out both repos separately, applies manager and SUSFS patch
 | `debug_artifacts` | `false` | Upload debug files on success; failed runs always upload available debug files |
 | `make_release` | `false` | Create a draft GitHub release |
 
+### `build-matrix.yml` Inputs
+
+| Input | Default | Description |
+|---|---|---|
+| `build_none` | `false` | Build baseline no-root kernel |
+| `build_kernelsu` | `false` | Build KernelSU (no SUSFS) |
+| `build_kernelsu_next` | `false` | Build KernelSU-Next |
+| `build_sukisu_ultra` | `false` | Build SukiSU Ultra |
+| `build_resukisu` | `false` | Build ReSukiSU |
+| `enable_susfs` | `false` | Enable SUSFS for all managers that support it |
+| `susfs_version` | `v2.2.0` | SUSFS preset version |
+| `build_scope` | `image-only` | `image-only` or `full` |
+| `make_release` | `false` | Create a draft GitHub release per successful build |
+
 ---
 
 ## 📦 Artifact Layout
@@ -87,19 +110,30 @@ GitHub Actions checks out both repos separately, applies manager and SUSFS patch
 ### ✅ Successful build artifact
 
 ```
-marble-flashable-<manager>-<scope>-<run>/
-├─ AK3_Marble_android12-5.10_<manager>_<manager-sha>_<susfs>_<susfs-sha>_<date>_r<run>.zip
-├─ AK3_Marble_android12-5.10_<manager>_<manager-sha>_<susfs>_<susfs-sha>_<date>_r<run>.zip.sha256
+marble-<label>-<scope>-r<run>/
+├─ Marble_<Manager>-<version>_<SUSFS>_<date>_r<run>.zip
+├─ Marble_<Manager>-<version>_<SUSFS>_<date>_r<run>.zip.sha256
 ├─ build-info.txt      ← exact resolved refs and workflow metadata
 ├─ summary.md          ← build summary (also used for release notes)
 ├─ zip-audit.txt       ← structure audit results
 └─ ccache-stats.txt
 ```
 
+Examples:
+```
+Marble_KSUNext-v3.2.0_SUSFS-v2.2.0_20260622_r46.zip
+Marble_SukiSU-Ultra-v1.9.8_SUSFS-v2.2.0_20260622_r47.zip
+Marble_ReSukiSU-v1.2.0_SUSFS-v2.2.0_20260622_r48.zip
+Marble_KernelSU-v1.0.3_NoSUSFS_20260622_r12.zip
+Marble_NoRoot_NoSUSFS_20260622_r5.zip
+```
+
+> Version tag (e.g. `v3.2.0`) is used when the manager commit has a tag. Falls back to a 7-character SHA otherwise.
+
 ### 🐛 Debug artifact (on failure or `debug_artifacts=true`)
 
 ```
-marble-debug-<manager>-<scope>-<run>/
+marble-debug-<label>-<scope>-r<run>/
 ├─ Image
 ├─ System.map
 ├─ vmlinux
