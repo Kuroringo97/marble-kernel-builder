@@ -118,7 +118,9 @@ jobs:
       - name: Validate builder policy
         run: |
           for test_script in tests/test-*.sh; do
-            bash "${test_script}"
+            env -u SOURCE_REPO -u SOURCE_REF -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
+              -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
+              -u EXPERIMENTAL_KSUNEXT_DEV_SUSFS bash "${test_script}"
           done
 
       - name: Validate inputs
