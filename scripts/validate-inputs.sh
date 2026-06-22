@@ -54,7 +54,8 @@ if [[ "${ENABLE_SUSFS}" == "true" ]]; then
       exit 1
       ;;
     kernelsu-next)
-      [[ -z "${MANAGER_REF}" || "${MANAGER_REF}" == "legacy-susfs" ]] || { echo "::error::KernelSU-Next + SUSFS requires official ref legacy-susfs"; exit 1; }
+      echo "::error::Official KernelSU-Next + SUSFS is not compatible with the Marble kernel. Disable SUSFS or choose SukiSU Ultra/ReSukiSU."
+      exit 1
       ;;
     sukisu-ultra)
       [[ -z "${MANAGER_REF}" || "${MANAGER_REF}" == "builtin" ]] || { echo "::error::SukiSU Ultra + SUSFS requires official ref builtin"; exit 1; }

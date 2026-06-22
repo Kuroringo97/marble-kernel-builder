@@ -68,7 +68,7 @@ expect_validation_failure custom false
 expect_validation_failure kernelsu true
 expect_validation_success none false
 expect_validation_success kernelsu false
-expect_validation_success kernelsu-next true
+expect_validation_failure kernelsu-next true
 expect_validation_success sukisu-ultra true
 expect_validation_success resukisu true
 

@@ -176,9 +176,6 @@ jobs:
       - name: Apply manager
         run: bash scripts/patch-manager.sh
 
-      - name: Apply manager compatibility
-        run: bash scripts/apply-manager-compat.sh
-
       - name: Apply SUSFS
         run: bash scripts/apply-susfs.sh
 

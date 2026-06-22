@@ -62,7 +62,7 @@ Checked on 2026-06-22.
 | SUSFS default | `4003ecf2d01c6d13fa8edf6c4f2607365738dc3d` | pinned `v2.2.0` for `gki-android12-5.10` |
 | SUSFS older preset | `86114db0c49f20fa7857b8b559f3ab87cbc2d00d` | `v2.1.0`, WildKernels GKI r4 gki-android12-5.10 pin |
 | KernelSU | official `tiann/KernelSU@main` | SUSFS disabled until an official compatible integration exists |
-| KernelSU-Next | official `dev` / `legacy-susfs` | SUSFS automatically selects `legacy-susfs` |
+| KernelSU-Next | official `dev` | SUSFS disabled after official `legacy-susfs` failed Marble compile/link verification |
 | SukiSU Ultra | official `main` / `builtin` | SUSFS automatically selects `builtin` |
 | ReSukiSU | official `main` | `main` includes manager-side SUSFS support |
 | Android kernel Clang | `clang-r416183b` | declared by `build.config.common` |
@@ -75,7 +75,7 @@ Checked on 2026-06-22.
 4. `manager=kernelsu-next`, `enable_susfs=false`, `build_scope=image-only`
 5. `manager=sukisu-ultra`, `enable_susfs=false`, `build_scope=image-only`
 6. `manager=resukisu`, `enable_susfs=false`, `build_scope=image-only`
-7. Test SUSFS with `kernelsu-next`, `sukisu-ultra`, or `resukisu`; leave `manager_ref` empty so the workflow selects the official compatible ref.
+7. Test SUSFS with `sukisu-ultra` or `resukisu`; leave `manager_ref` empty so the workflow selects the official compatible ref.
 
 The builder never selects a forked or custom manager repository. It also never applies the generic SUSFS manager patch to a drifting manager tree. Instead, it requires manager-side SUSFS support from the selected official ref, applies the SUSFS kernel patch/files, and verifies `CONFIG_KSU=y` plus `CONFIG_KSU_SUSFS=y` in the final build config.
 
