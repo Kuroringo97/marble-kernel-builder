@@ -132,22 +132,39 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: android-clang
-          key: marble-builder-clang-v2-${{ runner.os }}-${{ runner.arch }}-clang-r416183b-b9dff4a2
+          key: marble-builder-clang-v3-${{ runner.os }}-${{ runner.arch }}-clang-r416183b-6e3223f
 
-      - name: Fetch and verify Android kernel clang
+      - name: Fetch pinned Android kernel clang
         run: |
           source config/marble.env
           if [[ -x "${ANDROID_CLANG_BIN}/clang" ]]; then
             "${ANDROID_CLANG_BIN}/clang" --version
             exit 0
           fi
-          archive="$(mktemp)"
-          curl --retry 5 --retry-delay 5 --retry-all-errors --connect-timeout 30 \
-            -fsSL "${ANDROID_CLANG_ARCHIVE_URL}" -o "${archive}"
-          echo "${ANDROID_CLANG_ARCHIVE_SHA256}  ${archive}" | sha256sum -c -
-          mkdir -p "android-clang/${ANDROID_CLANG_VERSION}"
-          tar -xzf "${archive}" -C "android-clang/${ANDROID_CLANG_VERSION}"
-          rm -f "${archive}"
+          toolchain_repo="${RUNNER_TEMP}/android-clang-repo"
+          for attempt in 1 2 3; do
+            rm -rf "${toolchain_repo}"
+            if git clone --filter=blob:none --no-checkout --depth=1 \
+              --branch "${ANDROID_CLANG_REF}" "${ANDROID_CLANG_REPO}" "${toolchain_repo}"; then
+              break
+            fi
+            if (( attempt == 3 )); then
+              echo "::error::Failed to fetch Android Clang repository after ${attempt} attempts"
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+          actual_commit="$(git -C "${toolchain_repo}" rev-parse HEAD)"
+          if [[ "${actual_commit}" != "${ANDROID_CLANG_REF_COMMIT}" ]]; then
+            echo "::error::Android Clang ref moved: expected ${ANDROID_CLANG_REF_COMMIT}, got ${actual_commit}"
+            exit 1
+          fi
+          git -C "${toolchain_repo}" sparse-checkout set "${ANDROID_CLANG_VERSION}"
+          git -C "${toolchain_repo}" checkout -q --detach "${actual_commit}"
+          mkdir -p android-clang
+          rm -rf "android-clang/${ANDROID_CLANG_VERSION}"
+          mv "${toolchain_repo}/${ANDROID_CLANG_VERSION}" android-clang/
+          rm -rf "${toolchain_repo}"
           test -x "${ANDROID_CLANG_BIN}/clang"
           "${ANDROID_CLANG_BIN}/clang" --version
 
@@ -206,7 +223,7 @@ jobs:
             echo "runner_image_os=${ImageOS:-unknown}"
             echo "runner_image_version=${ImageVersion:-unknown}"
             echo "android_clang_version=clang-r416183b"
-            echo "android_clang_sha256=b9dff4a2df3d11a38c8e81ae259f1a1f5df083a9a30779dc5fa8f47a5602a3ef"
+            echo "android_clang_commit=6e3223f76384455acde43affde3df0ea9df66c0d"
             echo "ccache_key=${{ steps.cache-context.outputs.key }}"
             echo "ccache_hit=${{ steps.ccache-restore.outputs.cache-hit || 'false' }}"
             echo "disk_available_before_build_gib=${{ steps.disk-space.outputs.available_gib }}"

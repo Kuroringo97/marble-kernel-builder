@@ -11,8 +11,8 @@ source config/marble.env
   exit 1
 }
 
-[[ "${ANDROID_CLANG_ARCHIVE_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] || {
-  echo "FAIL: ANDROID_CLANG_ARCHIVE_SHA256 must be a SHA256 digest" >&2
+[[ "${ANDROID_CLANG_REF_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]] || {
+  echo "FAIL: ANDROID_CLANG_REF_COMMIT must be a full commit SHA" >&2
   exit 1
 }
 
