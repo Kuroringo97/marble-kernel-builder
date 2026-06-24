@@ -200,7 +200,7 @@ build_badge_url="https://img.shields.io/badge/Matrix-Passing-2088FF?style=for-th
       echo "| 🧾 **Signature Hash** | \`${sig_hash}\` |"
     fi
     if [[ -n "${supported_line}" ]]; then
-      echo "| 🤝 **Supported Managers** | ${supported_line} |"
+      echo "| 🤝 **Supported Managers** | ${supported_line//,/, } |"
     fi
     if [[ "${manager_name}" == "kernelsu-next" && "$(get_info "${build_info}" enable_susfs)" == "true" ]]; then
       echo "| 📌 **Note** | Non-SUSFS builds use official \`KernelSU-Next/KernelSU-Next@dev\` · SUSFS builds use \`pershoot/dev-susfs\` |"

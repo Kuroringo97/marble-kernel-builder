@@ -55,6 +55,7 @@ else
     sed -nE 's/.*-- Supported Unofficial Manager:[[:space:]]*(.+)$/\1/p' \
       "${build_log}" | head -n1 | tr -d '\r' || true
   )"
+  manager_supported_line="${manager_supported_line//, /,}"
 fi
 
 {

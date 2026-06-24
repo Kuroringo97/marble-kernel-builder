@@ -32,6 +32,7 @@ required_core_patterns=(
   'ccache_hit='
   'publish_step_summary'
   'Read manager build metadata'
+  'name=marble-flash-${{ inputs.artifact_label }}-${BUILD_SCOPE}-r${GITHUB_RUN_NUMBER}'
 )
 
 for pattern in "${required_core_patterns[@]}"; do
@@ -88,7 +89,7 @@ grep -Fq 'Generate combined matrix summary' .github/workflows/build-matrix.yml |
   exit 1
 }
 
-grep -Fq 'pattern: marble-*-r${{ github.run_number }}' .github/workflows/build-matrix.yml || {
+grep -Fq 'pattern: marble-flash-*-r${{ github.run_number }}' .github/workflows/build-matrix.yml || {
   echo "FAIL: matrix workflow does not download all matrix flash artifacts by pattern" >&2
   exit 1
 }

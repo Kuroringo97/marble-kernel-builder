@@ -187,7 +187,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
       echo "| 🧾 **Signature Hash** | \`${manager_signature_hash}\` |"
     fi
     if [[ -n "${manager_supported_line}" ]]; then
-      echo "| 🤝 **Supported Managers** | ${manager_supported_line} |"
+      echo "| 🤝 **Supported Managers** | ${manager_supported_line//,/, } |"
     fi
     if [[ "${manager_name}" == "kernelsu-next" && "${ENABLE_SUSFS}" == "true" ]]; then
       echo "| 📌 **Note** | Non-SUSFS builds use official \`KernelSU-Next/KernelSU-Next@dev\` · SUSFS builds use \`pershoot/dev-susfs\` |"

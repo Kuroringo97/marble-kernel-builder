@@ -249,7 +249,7 @@ jobs:
 
       - name: Set artifact name
         id: artifact-name
-        run: echo "name=marble-${{ inputs.artifact_label }}-${BUILD_SCOPE}-r${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+        run: echo "name=marble-flash-${{ inputs.artifact_label }}-${BUILD_SCOPE}-r${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Upload flashable artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

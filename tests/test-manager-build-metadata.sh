@@ -62,6 +62,11 @@ run_case() {
     echo "FAIL: ${name}: supported line expected '${expected_supported}', got '${actual_supported}'" >&2
     exit 1
   }
+
+  if ! source "${refs_file}"; then
+    echo "FAIL: ${name}: resolved refs file is not source-safe" >&2
+    exit 1
+  fi
 }
 
 run_case kernelsu \
@@ -78,7 +83,7 @@ run_case sukisu_ultra \
 
 run_case resukisu \
   $'-- ReSukiSU version code: 34989\n-- ReSukiSU version name: v4.1.0-d0f59d06@ReSukiSU\n-- Supported Unofficial Manager: MKSU, RKSU, KOWSU, SukiSU-Ultra, ReSukiSU' \
-  '34989' 'v4.1.0-d0f59d06@ReSukiSU' '' '' '' 'MKSU, RKSU, KOWSU, SukiSU-Ultra, ReSukiSU'
+  '34989' 'v4.1.0-d0f59d06@ReSukiSU' '' '' '' 'MKSU,RKSU,KOWSU,SukiSU-Ultra,ReSukiSU'
 
 run_case no_metadata \
   $'CC drivers/example.o' \
