@@ -56,6 +56,16 @@ susfs_reported="$(get_info susfs_reported_version)"
 susfs_url="$(get_info susfs_url)"
 android_clang_version="$(get_info android_clang_version)"
 android_clang_commit="$(get_info android_clang_commit)"
+lto_mode="$(get_info lto)"
+lto_mode="${lto_mode:-thin}"
+ccache_hit="$(get_info ccache_hit)"
+thinlto_cache_hit="$(get_info thinlto_cache_hit)"
+package_family="$(get_info package_family)"
+quality_label="$(get_info quality_label)"
+if [[ -z "${quality_label}" ]]; then
+  quality_label="$(summary_quality_label "${kernel_source_id:-melt}")"
+fi
+ccache_stats_line="$(summary_format_ccache_hits "${release_dir}/ccache-stats.txt")"
 zip_sha="$(sha256sum "${release_dir}/${zip_name}" | awk '{print $1}')"
 image_sha="$(sha256sum "${release_dir}/Image" | awk '{print $1}')"
 zip_size="$(du -h "${release_dir}/${zip_name}" | awk '{print $1}')"
@@ -139,11 +149,18 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   fi
   echo "| 🧬 **Kernel Base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build Scope** | \`${BUILD_SCOPE}\` |"
+  if [[ -n "${package_family}" ]]; then
+    echo "| 🏷️ **Package Family** | \`${package_family}\` |"
+  fi
+  echo "| 🧪 **Quality** | \`${quality_label}\` |"
+  echo "| 🔗 **LTO** | \`${lto_mode}\` |"
   echo "| 📦 **Source** | [\`${source_ref} @ $(short_commit "${source_commit}")\`](https://github.com/${source_repo}/commit/${source_commit}) |"
   echo "| 🔨 **Compiler** | \`${android_clang_version:-clang-r416183b}\` |"
   if [[ -n "${android_clang_commit}" ]]; then
     echo "| 🧷 **Compiler Commit** | \`$(short_commit "${android_clang_commit}")\` |"
   fi
+  echo "| 💾 **Ccache hit** | \`${ccache_hit:-unknown}\` · ${ccache_stats_line} |"
+  echo "| 🧵 **ThinLTO cache hit** | \`${thinlto_cache_hit:-n/a}\` |"
   echo
   echo "---"
   echo
@@ -196,6 +213,8 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
     echo "| 🏷️ **Version** | \`${susfs_display}\` |"
     echo "| 🌿 **Kernel Branch** | \`${susfs_branch}\` |"
     echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    echo
+    summary_susfs_module_note
   else
     echo "SUSFS is not enabled for this build."
   fi

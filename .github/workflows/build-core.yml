@@ -47,7 +47,7 @@ on:
       toolchain:
         required: false
         type: string
-        default: android-r416183b
+        default: auto
       lto:
         required: false
         type: string
@@ -113,6 +113,9 @@ jobs:
         id: kernel-source
         run: bash scripts/resolve-kernel-source.sh
 
+      - name: Resolve toolchain
+        run: bash scripts/resolve-toolchain.sh
+
       - name: Validate inputs
         run: bash scripts/validate-inputs.sh
 
@@ -157,7 +160,7 @@ jobs:
             rsync unzip zip zstd
 
       - name: Restore Android kernel clang
-        if: ${{ inputs.toolchain == 'android-r416183b' }}
+        if: ${{ env.TOOLCHAIN == 'android-r416183b' }}
         id: android-clang-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -165,7 +168,7 @@ jobs:
           key: marble-builder-clang-v3-${{ runner.os }}-${{ runner.arch }}-clang-r416183b-6e3223f
 
       - name: Fetch pinned Android kernel clang
-        if: ${{ inputs.toolchain == 'android-r416183b' }}
+        if: ${{ env.TOOLCHAIN == 'android-r416183b' }}
         run: |
           source config/marble.env
           if [[ -x "${ANDROID_CLANG_BIN}/clang" ]]; then
@@ -200,7 +203,7 @@ jobs:
           "${ANDROID_CLANG_BIN}/clang" --version
 
       - name: Restore LLVM 22.1.8
-        if: ${{ inputs.toolchain == 'llvm-22.1.8' }}
+        if: ${{ env.TOOLCHAIN == 'llvm-22.1.8' }}
         id: llvm-2218-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -208,7 +211,7 @@ jobs:
           key: marble-builder-llvm-v1-${{ runner.os }}-${{ runner.arch }}-22.1.8-df0e1ecf
 
       - name: Fetch LLVM 22.1.8
-        if: ${{ inputs.toolchain == 'llvm-22.1.8' }}
+        if: ${{ env.TOOLCHAIN == 'llvm-22.1.8' }}
         run: |
           source config/marble.env
           if [[ -x "${LLVM_22_1_8_BIN}/clang" ]]; then
@@ -359,6 +362,13 @@ jobs:
             echo "toolchain=${TOOLCHAIN}"
             echo "toolchain_digest=${ACTIVE_TOOLCHAIN_DIGEST}"
             echo "lto=${LTO:-thin}"
+            echo "package_family=${PACKAGE_FAMILY:-}"
+            echo "quality_channel=${QUALITY_CHANNEL:-experimental}"
+            if [[ "${KERNEL_SOURCE:-melt}" == "melt" ]]; then
+              echo "quality_label=melt-stable-candidate"
+            else
+              echo "quality_label=los-experimental"
+            fi
             echo "ccache_key=${{ steps.cache-context.outputs.key }}"
             echo "ccache_hit=${{ steps.ccache-restore.outputs.cache-hit || 'false' }}"
             echo "thinlto_cache_key=${{ steps.cache-context.outputs.thinlto_key }}"

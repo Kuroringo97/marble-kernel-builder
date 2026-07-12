@@ -1,0 +1,29 @@
+name: Weekly Melt Smoke
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/build-core.yml
+    with:
+      kernel_source: melt
+      source_ref: ""
+      manager: none
+      enable_susfs: false
+      susfs_version: v2.2.0
+      susfs_kernel_branch: gki-android12-5.10
+      build_scope: image-only
+      enable_ccache: true
+      toolchain: auto
+      lto: thin
+      artifact_label: weekly-melt-noroot
+      run_policy_tests: false
+      publish_step_summary: true

@@ -39,6 +39,11 @@ susfs_ref=4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
 susfs_commit=4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
 susfs_reported_version=v2.2.0
 susfs_url=https://gitlab.com/simonpunk/susfs4ksu/-/commit/4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
+lto=thin
+ccache_hit=false
+thinlto_cache_hit=false
+package_family=MELT
+quality_label=melt-stable-candidate
 INFO
 
 KERNEL_DIR="${tmp_dir}" MANAGER=kernelsu-next ENABLE_SUSFS=true BUILD_SCOPE=image-only GITHUB_RUN_NUMBER=49 \
@@ -70,6 +75,9 @@ required_patterns=(
   'marblein'
   'Flash the ZIP to the active slot'
   'GitHub Actions'
+  'SUSFS userspace module'
+  'LTO'
+  'melt-stable-candidate'
 )
 
 for pattern in "${required_patterns[@]}"; do

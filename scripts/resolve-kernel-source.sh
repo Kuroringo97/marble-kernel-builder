@@ -45,6 +45,12 @@ fragments = preset.get("config_fragments") or []
 config_fragments = " ".join(fragments)
 recommended_toolchain = preset.get("recommended_toolchain") or ""
 
+rom_family_norm = (rom_family or "").lower()
+if rom_family_norm == "los" or kernel_source in ("lineageos", "evolution-x", "pablo"):
+    package_family = "LOS"
+else:
+    package_family = "MELT"
+
 resolved_ref = source_ref_override or default_ref
 if not resolved_ref:
     print(
@@ -92,6 +98,7 @@ values = {
     "BASE_DEFCONFIG": base_defconfig,
     "CONFIG_FRAGMENTS": config_fragments,
     "RECOMMENDED_TOOLCHAIN": recommended_toolchain,
+    "PACKAGE_FAMILY": package_family,
 }
 for key, value in values.items():
     print(f"{key}={shlex.quote(value)}")
@@ -100,19 +107,21 @@ PY
 
 mkdir -p release
 {
-  echo "KERNEL_SOURCE=${KERNEL_SOURCE}"
-  echo "KERNEL_SOURCE_DISPLAY=${KERNEL_SOURCE_DISPLAY}"
-  echo "KERNEL_SOURCE_AUTHOR=${KERNEL_SOURCE_AUTHOR}"
-  echo "SOURCE_REPO=${SOURCE_REPO}"
-  echo "SOURCE_REF=${SOURCE_REF}"
-  echo "SUPPORTED_ROM_LABEL=${SUPPORTED_ROM_LABEL}"
-  echo "ROM_FAMILY=${ROM_FAMILY}"
-  echo "ROM_SUPPORT=${ROM_SUPPORT}"
-  echo "DEFCONFIG_MODE=${DEFCONFIG_MODE}"
-  echo "DEFCONFIG=${DEFCONFIG}"
-  echo "BASE_DEFCONFIG=${BASE_DEFCONFIG}"
-  echo "CONFIG_FRAGMENTS=${CONFIG_FRAGMENTS}"
-  echo "RECOMMENDED_TOOLCHAIN=${RECOMMENDED_TOOLCHAIN}"
+  # Shell-quote so `source release/kernel-source.env` is safe for values with spaces.
+  echo "KERNEL_SOURCE=$(printf '%q' "${KERNEL_SOURCE}")"
+  echo "KERNEL_SOURCE_DISPLAY=$(printf '%q' "${KERNEL_SOURCE_DISPLAY}")"
+  echo "KERNEL_SOURCE_AUTHOR=$(printf '%q' "${KERNEL_SOURCE_AUTHOR}")"
+  echo "SOURCE_REPO=$(printf '%q' "${SOURCE_REPO}")"
+  echo "SOURCE_REF=$(printf '%q' "${SOURCE_REF}")"
+  echo "SUPPORTED_ROM_LABEL=$(printf '%q' "${SUPPORTED_ROM_LABEL}")"
+  echo "ROM_FAMILY=$(printf '%q' "${ROM_FAMILY}")"
+  echo "ROM_SUPPORT=$(printf '%q' "${ROM_SUPPORT}")"
+  echo "DEFCONFIG_MODE=$(printf '%q' "${DEFCONFIG_MODE}")"
+  echo "DEFCONFIG=$(printf '%q' "${DEFCONFIG}")"
+  echo "BASE_DEFCONFIG=$(printf '%q' "${BASE_DEFCONFIG}")"
+  echo "CONFIG_FRAGMENTS=$(printf '%q' "${CONFIG_FRAGMENTS}")"
+  echo "RECOMMENDED_TOOLCHAIN=$(printf '%q' "${RECOMMENDED_TOOLCHAIN}")"
+  echo "PACKAGE_FAMILY=$(printf '%q' "${PACKAGE_FAMILY}")"
 } > release/kernel-source.env
 
 if [[ -n "${GITHUB_ENV:-}" ]]; then
@@ -130,6 +139,7 @@ if [[ -n "${GITHUB_ENV:-}" ]]; then
     echo "BASE_DEFCONFIG=${BASE_DEFCONFIG}"
     echo "CONFIG_FRAGMENTS=${CONFIG_FRAGMENTS}"
     echo "RECOMMENDED_TOOLCHAIN=${RECOMMENDED_TOOLCHAIN}"
+    echo "PACKAGE_FAMILY=${PACKAGE_FAMILY}"
   } >> "${GITHUB_ENV}"
 fi
 

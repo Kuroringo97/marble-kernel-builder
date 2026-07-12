@@ -57,6 +57,15 @@ case "${LTO}" in
   *) echo "::error::LTO must be none, thin, or full, got ${LTO}"; exit 1 ;;
 esac
 
+if [[ "${LTO}" == "full" ]]; then
+  echo "::warning::LTO=full is memory-heavy on free GitHub-hosted runners (~7GiB). Prefer thin unless on high-RAM hosts."
+fi
+
+if [[ "${MARBLE_DENY_FULL_LTO:-false}" == "true" && "${LTO}" == "full" ]]; then
+  echo "::error::LTO=full is denied by MARBLE_DENY_FULL_LTO=true"
+  exit 1
+fi
+
 if [[ -z "${SOURCE_REPO}" || ! "${SOURCE_REPO}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
   echo "::error::SOURCE_REPO must look like owner/repo, got ${SOURCE_REPO}"
   exit 1

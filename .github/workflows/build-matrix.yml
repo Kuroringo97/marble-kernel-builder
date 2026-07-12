@@ -60,10 +60,11 @@ on:
           - image-only
           - full
       toolchain:
-        description: Compiler toolchain
+        description: "Compiler toolchain (auto = preset recommended, e.g. llvm-22 for LOS)"
         type: choice
-        default: android-r416183b
+        default: auto
         options:
+          - auto
           - android-r416183b
           - llvm-22.1.8
       lto:
@@ -87,7 +88,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
   cancel-in-progress: false
 
 jobs:

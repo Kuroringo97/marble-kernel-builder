@@ -85,18 +85,21 @@ assert_name() {
 }
 
 assert_name \
-  'AK3_Marble-LineageOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip' \
-  MANAGER=kernelsu-next ENABLE_SUSFS=true SUPPORTED_ROM_LABEL=LineageOS \
+  'AK3_marble_LOS_lineageos_ksunext-v3.2.0-code33203_susfs-v2.2.0_r9.zip' \
+  KERNEL_SOURCE=lineageos ROM_FAMILY=los \
+  MANAGER=kernelsu-next ENABLE_SUSFS=true \
   manager_build_version_name='v3.2.0' manager_build_version_code=33203 \
   susfs_reported_version=v2.2.0
 
 assert_name \
-  'AK3_Marble-Evolution-X_NoRoot_NoSUSFS_r9.zip' \
-  MANAGER=none ENABLE_SUSFS=false SUPPORTED_ROM_LABEL=Evolution-X
+  'AK3_marble_LOS_evolution-x_noroot_r9.zip' \
+  KERNEL_SOURCE=evolution-x ROM_FAMILY=los \
+  MANAGER=none ENABLE_SUSFS=false
 
 assert_name \
-  'AK3_Marble-Pablo_ReSukiSU-v4.1.0-code34990_NoSUSFS_r9.zip' \
-  MANAGER=resukisu ENABLE_SUSFS=false SUPPORTED_ROM_LABEL=Pablo \
+  'AK3_marble_LOS_pablo_resukisu-v4.1.0-code34990_r9.zip' \
+  KERNEL_SOURCE=pablo ROM_FAMILY=los \
+  MANAGER=resukisu ENABLE_SUSFS=false \
   manager_build_version_name=v4.1.0 manager_build_version_code=34990
 
 echo "Kernel source preset tests passed"

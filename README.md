@@ -91,10 +91,35 @@ Named after the project / author. Pick one in **Build Marble Kernel**:
 | `evolution-x` | Evolution-X | [`Evolution-X-Devices/kernel_xiaomi_sm8450`](https://github.com/Evolution-X-Devices/kernel_xiaomi_sm8450) | `cnb` | **LOS-based** custom ROMs only |
 | `pablo` | Pablo | [`aosp-pablo/android_kernel_xiaomi_sm8450`](https://github.com/aosp-pablo/android_kernel_xiaomi_sm8450) | `16` | **LOS-based** custom ROMs only |
 
-- **HyperOS (`melt`)** uses `marble_defconfig` and the default Android `clang-r416183b` toolchain; **LTO stays on** (default `thin`).
-- **LOS-family kernels** merge `gki_defconfig` + `vendor/waipio_GKI.config` + `vendor/xiaomi_GKI.config` + `vendor/marble_GKI.config` + `vendor/debugfs.config` (same chain as Lineage device trees).
-- **LOS-family kernels need `toolchain=llvm-22.1.8`** — they set `-march=armv9-a+…` which Android `clang-r416183b` (clang-12) rejects. Prefer **`lto=thin`** plus the workflow swap setup on free runners.
+- **HyperOS (`melt`)** uses `marble_defconfig` and Android `clang-r416183b` via `toolchain=auto`.
+- **LOS-family kernels** merge `gki_defconfig` + vendor GKI fragments; `toolchain=auto` selects **`llvm-22.1.8`** (armv9). Prefer **`lto=thin`** on free runners.
 - Optional **`source_ref`** overrides the preset default branch/tag/commit.
+
+### Recommended workflow inputs
+
+| Preset | toolchain | lto | Notes |
+|--------|-----------|-----|-------|
+| `melt` | `auto` → `android-r416183b` | `thin` | HyperOS-oriented |
+| `lineageos` | `auto` → `llvm-22.1.8` | `thin` | Required for armv9 |
+| `evolution-x` | `auto` → `llvm-22.1.8` | `thin` | LOS-family |
+| `pablo` | `auto` → `llvm-22.1.8` | `thin` | LOS-family |
+
+**Free runners:** avoid many parallel LOS+LLVM jobs; prefer 1–2 heavy builds at a time. Prefer `lto=thin`, not `full`.
+
+**After SUSFS kernels:** install a matching SUSFS userspace module (e.g. sidex15) in addition to the manager app.
+
+### Flash ZIP naming
+
+```text
+AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+```
+
+| FAMILY | Sources |
+|--------|---------|
+| `MELT` | `melt` |
+| `LOS` | `lineageos`, `evolution-x`, `pablo` |
+
+LTO and toolchain are **not** in the filename (see flash banner + `build-info.*`).
 
 **CI flow (simplified):**
 
@@ -113,6 +138,8 @@ Upload artifacts  ·  optional draft release
 ```
 
 Patches never land on the source repos — only inside the temporary CI workspace.
+
+**Deep dive:** full CI topology, cache keys, LTO, packaging, and extensibility → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -222,8 +249,8 @@ Run in order. Verify each step before the next:
 
 ```text
 marble-flash-<label>-<scope>-r<run>/
-├─ AK3_Marble-<AuthorOrROM>_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip
-├─ AK3_Marble-<AuthorOrROM>_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip.sha256
+├─ AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+├─ *.zip.sha256
 ├─ build-info.txt       # resolved refs + workflow metadata
 ├─ build-info.json      # structured metadata for tooling
 ├─ summary.md           # build summary (also used as release notes)
@@ -234,15 +261,15 @@ marble-flash-<label>-<scope>-r<run>/
 ### Name examples
 
 ```text
-AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
-AK3_Marble-LineageOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
-AK3_Marble-Evolution-X_SukiSUUltra-v4.1.3-code40813_SUSFS-v2.2.0_r9.zip
-AK3_Marble-Pablo_ReSukiSU-v4.1.0-code34990_SUSFS-v2.2.0_r9.zip
-AK3_Marble-HyperOS_NoRoot_NoSUSFS_r9.zip
+AK3_marble_MELT_melt_ksunext-v3.2.0-code33203_susfs-v2.2.0_r121.zip
+AK3_marble_LOS_lineageos_ksunext-v3.2.0-code33203_susfs-v2.2.0_r121.zip
+AK3_marble_LOS_evolution-x_sukisu-v4.1.3-code40813_susfs-v2.2.0_r122.zip
+AK3_marble_LOS_pablo_resukisu-v4.1.0-code34990_r123.zip
+AK3_marble_MELT_melt_noroot_r124.zip
 ```
 
 > Versioning prefers manager **build version + numeric code**.  
-> Fallback: resolved tag → 7-character manager commit.
+> Fallback: resolved tag → 7-character manager commit. SUSFS off omits the susfs segment.
 
 ---
 
@@ -374,7 +401,7 @@ On A/B devices, target the correct slot (or both if needed).
 ## 💬 Support
 
 - 🐛 [Open an issue](https://github.com/mohdakil2426/marble-kernel-builder/issues) for builder / CI problems  
-- 📖 See [`docs/`](docs/) for versions, manager matrix, and verification notes  
+- 📖 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/versions.md`](docs/versions.md), manager matrix, and verification notes  
 
 ---
 

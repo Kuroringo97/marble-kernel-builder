@@ -22,7 +22,29 @@ Last updated: **2026-07-13** (aligned with branch `feature/los-kernel-source-pre
 
 The workflow resolves branch, tag, and commit inputs to exact commits at run time and records them in `release/build-info.txt`. For SUSFS, the user chooses `susfs_version=v2.2.0`, `susfs_version=v2.1.0`, or `susfs_version=custom`. Custom mode uses `susfs_ref` and verifies `susfs_expected_version` when provided.
 
-Device targets remain Poco F5 (`marblein`) and Redmi Note 12 Turbo (`marble`). ROM support depends on the selected kernel preset: `melt` is stock HyperOS; `lineageos`, `evolution-x`, and `pablo` are for LOS-based custom ROMs only. ZIP names use the preset author/ROM label: `AK3_Marble-<Label>_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip`. Enabling `create_draft_release` creates a ZIP-only draft tag `marble-<preset>-r<run>` without rebuilding.
+Device targets remain Poco F5 (`marblein`) and Redmi Note 12 Turbo (`marble`). ROM support depends on the selected kernel preset: `melt` is stock HyperOS; `lineageos`, `evolution-x`, and `pablo` are for LOS-based custom ROMs only.
+
+**ZIP naming (2026-07-13+):**
+
+```text
+AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+```
+
+`FAMILY` is `MELT` or `LOS`. Manager version/code stay in the name when available; SUSFS off omits the segment; LTO is not in the filename. Enabling `create_draft_release` creates a ZIP-only draft tag `marble-<preset>-r<run>` without rebuilding.
+
+**Toolchain:** workflow default is `auto` (preset `recommended_toolchain`, else `android-r416183b`).
+
+## Pin refresh
+
+Review `config/known-good-pins.json` and manager SUSFS forks **every 2–4 weeks** or after upstream breaks CI.
+
+## JOBS / ThinLTO overrides (self-hosted)
+
+Free defaults: LLVM `JOBS<=2`, `THINLTO_JOBS=2`. On larger hosts:
+
+```bash
+JOBS_FORCE=1 JOBS=8 THINLTO_JOBS=4
+```
 
 Manager repositories are allowlisted for normal builds. KernelSU-Next is official `KernelSU-Next/KernelSU-Next@dev` when SUSFS is disabled; when SUSFS is enabled, the workflow intentionally switches only that manager to `pershoot/KernelSU-Next@dev-susfs` because current official KernelSU-Next SUSFS paths are not Marble-compatible. Supported SUSFS paths apply only the kernel-side SUSFS patch/files and verify final Kconfig values. Official KernelSU + SUSFS remains rejected until a compatible integration exists.
 

@@ -58,15 +58,15 @@ INFO
 
 make_artifact "${tmp_dir}/marble-kernelsu-next-susfs-image-only-r5" \
   kernelsu-next pershoot/KernelSU-Next dev-susfs 5a8a604a9078c2fbfb50e2b0cba87b3a6f4da1c2 v3.2.0 33201 '' \
-  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33201_SUSFS-v2.2.0_r5.zip ksunext
+  AK3_marble_MELT_melt_ksunext-v3.2.0-code33201_susfs-v2.2.0_r5.zip ksunext
 
 make_artifact "${tmp_dir}/marble-sukisu-ultra-susfs-image-only-r5" \
   sukisu-ultra SukiSU-Ultra/SukiSU-Ultra builtin b88403d2561b6e00dff84a3c851e630c62f57fd0 '' 40813 'v4.1.3-b88403d2@HEAD' \
-  AK3_Marble-HyperOS_SukiSUUltra-v4.1.3-b88403d2-code40813_SUSFS-v2.2.0_r5.zip sukisu
+  AK3_marble_MELT_melt_sukisu-v4.1.3-b88403d2-code40813_susfs-v2.2.0_r5.zip sukisu
 
 make_artifact "${tmp_dir}/marble-resukisu-susfs-image-only-r5" \
   resukisu ReSukiSU/ReSukiSU main 88e7f51c3840436b982276ec35bf2876cfec2713 '' 34989 'v4.1.0-d0f59d06@ReSukiSU' \
-  AK3_Marble-HyperOS_ReSukiSU-v4.1.0-d0f59d06-code34989_SUSFS-v2.2.0_r5.zip resukisu
+  AK3_marble_MELT_melt_resukisu-v4.1.0-d0f59d06-code34989_susfs-v2.2.0_r5.zip resukisu
 
 mkdir -p "${tmp_dir}/unrelated-artifact-r5"
 printf '%s\n' 'artifact without flash metadata' > "${tmp_dir}/unrelated-artifact-r5/build.log"
@@ -93,9 +93,9 @@ required_patterns=(
   '^## .*SUSFS$'
   '^## .*Artifacts & checksums$'
   '^## .*Installation$'
-  'AK3_Marble-HyperOS_KSUNext-v3\.2\.0-code33201_SUSFS-v2\.2\.0_r5\.zip'
-  'AK3_Marble-HyperOS_SukiSUUltra-v4\.1\.3-b88403d2-code40813_SUSFS-v2\.2\.0_r5\.zip'
-  'AK3_Marble-HyperOS_ReSukiSU-v4\.1\.0-d0f59d06-code34989_SUSFS-v2\.2\.0_r5\.zip'
+  'AK3_marble_MELT_melt_ksunext-v3\.2\.0-code33201_susfs-v2\.2\.0_r5\.zip'
+  'AK3_marble_MELT_melt_sukisu-v4\.1\.3-b88403d2-code40813_susfs-v2\.2\.0_r5\.zip'
+  'AK3_marble_MELT_melt_resukisu-v4\.1\.0-d0f59d06-code34989_susfs-v2\.2\.0_r5\.zip'
   '^## .*Credits$'
   'KernelSU-Next team'
   'SukiSU Ultra team'
@@ -125,7 +125,7 @@ fi
 single_root="${tmp_dir}/single-root"
 make_artifact "${single_root}" \
   kernelsu-next pershoot/KernelSU-Next dev-susfs 5a8a604a9078c2fbfb50e2b0cba87b3a6f4da1c2 v3.2.0 33201 '' \
-  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33201_SUSFS-v2.2.0_r5.zip ksunext
+  AK3_marble_MELT_melt_ksunext-v3.2.0-code33201_susfs-v2.2.0_r5.zip ksunext
 
 MATRIX_ARTIFACTS_DIR="${single_root}" MATRIX_SUMMARY="${tmp_dir}/single-matrix-summary.md" \
   BUILD_SCOPE=image-only GITHUB_RUN_NUMBER=5 \

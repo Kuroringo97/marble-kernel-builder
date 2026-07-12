@@ -24,7 +24,7 @@ enable_susfs=true
 susfs_reported_version=v2.2.0
 INFO
 cat > "${release_dir}/zip-name.env" <<'ENV'
-zip_name=AK3_Marble-HyperOS_ReSukiSU-v4.1.0-code34990_SUSFS-v2.2.0_r7.zip
+zip_name=AK3_marble_MELT_melt_resukisu-v4.1.0-code34990_susfs-v2.2.0_r7.zip
 zip_sha256=abc123
 ENV
 
@@ -56,7 +56,7 @@ assert data["manager"]["build"]["supported"] == [
 ]
 assert data["susfs"]["enabled"] is True
 assert data["susfs"]["reported_version"] == "v2.2.0"
-assert data["artifact"]["zip_name"].startswith("AK3_Marble-HyperOS_ReSukiSU")
+assert data["artifact"]["zip_name"].startswith("AK3_marble_MELT_melt_resukisu")
 assert data["artifact"]["zip_sha256"] == "abc123"
 PY
 

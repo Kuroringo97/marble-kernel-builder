@@ -41,3 +41,31 @@ manager_app_url() {
     *)             echo "" ;;
   esac
 }
+
+summary_susfs_module_note() {
+  cat <<'EOF'
+### SUSFS userspace module
+
+If this build includes **SUSFS**, flash the kernel ZIP **and** install a compatible SUSFS userspace module for your manager (for example [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module/releases)). Kernel patches alone are not enough for full hide functionality.
+EOF
+}
+
+summary_format_ccache_hits() {
+  local f="${1:-}"
+  if [[ -z "${f}" || ! -f "${f}" ]]; then
+    echo "n/a"
+    return
+  fi
+  local rate
+  rate="$(grep -Ei 'hit rate|Hits:' "${f}" | head -n1 | sed -E 's/^[^:]*:[[:space:]]*//')"
+  echo "${rate:-see ccache-stats.txt}"
+}
+
+summary_quality_label() {
+  local kernel_source="${1:-melt}"
+  if [[ "${kernel_source}" == "melt" ]]; then
+    echo "melt-stable-candidate"
+  else
+    echo "los-experimental"
+  fi
+}

@@ -1,2 +1,4 @@
 # Local resolve/build scratch
 /release/
+
+.tools/

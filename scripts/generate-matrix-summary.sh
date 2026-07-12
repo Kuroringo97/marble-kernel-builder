@@ -339,6 +339,7 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo "- 📱 Poco F5 (\`marblein\`) or Redmi Note 12 Turbo (\`marble\`) only"
   echo "- 🧩 Kernel build that matches your **device + ROM**"
   echo "- 💾 Original \`boot.img\` from the same ROM/firmware stored **off-device**"
+  echo "- 🧵 Free runners: avoid many parallel LOS+LLVM jobs; prefer \`lto=thin\`"
   for artifact_dir in "${artifact_dirs[@]}"; do
     build_info="${artifact_dir}/build-info.txt"
     manager_name="$(get_info "${build_info}" manager)"

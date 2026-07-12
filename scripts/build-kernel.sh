@@ -13,6 +13,9 @@ TOOLCHAIN="${TOOLCHAIN:-android-r416183b}"
 
 # Free GitHub-hosted runners (~7 GiB) often OOM (exit 137) while linking vmlinux
 # with LLVM 22 at full -j$(nproc). Cap parallelism for the heavy toolchain.
+# Free defaults: LLVM JOBS<=2, THINLTO_JOBS=2 (see ThinLTO wrapper below).
+# Self-hosted override examples:
+#   JOBS_FORCE=1 JOBS=8 THINLTO_JOBS=4
 if [[ -z "${JOBS_FORCE:-}" ]]; then
   if [[ "${TOOLCHAIN}" == "llvm-22.1.8" ]] && (( JOBS > 2 )); then
     echo "Capping JOBS from ${JOBS} to 2 for ${TOOLCHAIN} (OOM-safe on free runners)"

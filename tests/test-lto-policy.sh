@@ -43,4 +43,16 @@ ENABLE_SUSFS=false \
 BUILD_SCOPE=image-only \
 bash scripts/validate-inputs.sh >/dev/null || fail "validation failed when LTO is unset"
 
+# full must still be accepted, but must emit a free-runner warning
+full_out="$(
+  SOURCE_REPO=mohdakil2426/android_kernel_xiaomi_marble \
+  SOURCE_REF=melt-rebase \
+  MANAGER=none \
+  ENABLE_SUSFS=false \
+  BUILD_SCOPE=image-only \
+  LTO=full \
+  bash scripts/validate-inputs.sh 2>&1
+)" || fail "validation rejected LTO=full"
+echo "${full_out}" | grep -q '::warning::' || fail "LTO=full should emit ::warning:: for free runners"
+
 echo "LTO policy tests passed"

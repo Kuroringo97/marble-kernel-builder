@@ -57,6 +57,16 @@ data = {
     "cache": {
         "ccache_key": info.get("ccache_key", ""),
         "ccache_hit": info.get("ccache_hit", ""),
+        "thinlto_cache_key": info.get("thinlto_cache_key", ""),
+        "thinlto_cache_hit": info.get("thinlto_cache_hit", ""),
+    },
+    "build": {
+        "lto": info.get("lto", ""),
+        "toolchain": info.get("toolchain", ""),
+        "package_family": info.get("package_family", ""),
+        "quality_channel": info.get("quality_channel", ""),
+        "quality_label": info.get("quality_label", ""),
+        "scope": info.get("build_scope", ""),
     },
     "manager": {
         "name": info.get("manager", ""),

@@ -166,13 +166,33 @@ grep -Fq 'toolchain:' "${matrix}" || {
   exit 1
 }
 
-grep -Fq 'default: android-r416183b' "${matrix}" || {
-  echo "FAIL: matrix workflow must keep Android r416183b as the default toolchain" >&2
+grep -Fq 'default: auto' "${matrix}" || {
+  echo "FAIL: matrix workflow must default toolchain to auto" >&2
+  exit 1
+}
+
+grep -Fq -- '- auto' "${matrix}" || {
+  echo "FAIL: matrix workflow must expose auto toolchain option" >&2
   exit 1
 }
 
 grep -Fq 'llvm-22.1.8' "${matrix}" || {
-  echo "FAIL: matrix workflow does not expose LLVM 22.1.8 as an experimental option" >&2
+  echo "FAIL: matrix workflow does not expose LLVM 22.1.8 as an option" >&2
+  exit 1
+}
+
+grep -Fq 'inputs.toolchain' "${wrapper}" || {
+  echo "FAIL: matrix concurrency or wiring must reference inputs.toolchain" >&2
+  exit 1
+}
+
+grep -Fq 'Resolve toolchain' "${core}" || {
+  echo "FAIL: build-core must resolve toolchain=auto after kernel preset" >&2
+  exit 1
+}
+
+grep -Fq 'resolve-toolchain.sh' "${core}" || {
+  echo "FAIL: build-core must call scripts/resolve-toolchain.sh" >&2
   exit 1
 }
 
