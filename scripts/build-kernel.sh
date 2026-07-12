@@ -99,13 +99,31 @@ if [[ "${ENABLE_SUSFS}" == "true" ]]; then
   scripts/config --file "${OUT_DIR}/.config" -e KSU_SUSFS
 fi
 
-# Full/thin LTO of a GKI tree often OOMs or times out free GitHub runners during
-# "LTO vmlinux.o". Keep Melt (single defconfig) behavior; only force LTO off for
-# multi-fragment LOS-family sources unless the caller overrides.
-if [[ "${DEFCONFIG_MODE}" == "gki_fragments" && "${ALLOW_LTO:-false}" != "true" ]]; then
-  echo "Disabling Clang LTO for gki_fragments build (free-runner safe)" | tee -a "${RELEASE_DIR}/build.log"
-  scripts/config --file "${OUT_DIR}/.config" -d LTO_CLANG -d LTO_CLANG_FULL -d LTO_CLANG_THIN -e LTO_NONE || true
-fi
+# Apply selectable Clang LTO for all presets (including gki_fragments / Melt).
+# Default thin is free-runner safe with swap + thinlto job caps; full needs more RAM.
+LTO="${LTO:-thin}"
+echo "Applying LTO mode: ${LTO}" | tee -a "${RELEASE_DIR}/build.log"
+case "${LTO}" in
+  none)
+    scripts/config --file "${OUT_DIR}/.config" \
+      -d LTO_CLANG -d LTO_CLANG_THIN -d LTO_CLANG_FULL -e LTO_NONE || true
+    # Also clear common Android synonyms if present
+    scripts/config --file "${OUT_DIR}/.config" -e LTO_CLANG_NONE 2>/dev/null || true
+    ;;
+  thin)
+    scripts/config --file "${OUT_DIR}/.config" \
+      -d LTO_NONE -d LTO_CLANG_NONE -d LTO_CLANG_FULL -e LTO_CLANG -e LTO_CLANG_THIN || true
+    ;;
+  full)
+    scripts/config --file "${OUT_DIR}/.config" \
+      -d LTO_NONE -d LTO_CLANG_NONE -d LTO_CLANG_THIN -e LTO_CLANG -e LTO_CLANG_FULL || true
+    echo "::warning::LTO=full is memory-heavy on free GitHub runners; prefer thin unless on high-RAM hosts"
+    ;;
+  *)
+    echo "::error::Unsupported LTO=${LTO}"
+    exit 1
+    ;;
+esac
 
 make O="${OUT_DIR}" ARCH="${ARCH}" LLVM=1 LLVM_IAS=1 CC="${CC}" olddefconfig 2>&1 | tee -a "${RELEASE_DIR}/build.log"
 
@@ -121,6 +139,17 @@ fi
 targets=(Image)
 if [[ "${BUILD_SCOPE}" == "full" ]]; then
   targets+=(modules dtbs)
+fi
+
+if [[ "${LTO}" == "thin" ]]; then
+  # Cap ThinLTO parallel codegen on free runners (~7 GiB) to avoid OOM during link.
+  THINLTO_JOBS="${THINLTO_JOBS:-2}"
+  wrapper="$(pwd)/${RELEASE_DIR}/ld-thinlto-wrapper"
+  printf '#!/bin/bash\nexec ld.lld "$@" --thinlto-jobs=%s\n' "${THINLTO_JOBS}" > "${wrapper}"
+  chmod +x "${wrapper}"
+  export LD="${wrapper}"
+  export HOSTLD="${wrapper}"
+  echo "ThinLTO jobs=${THINLTO_JOBS} via ${wrapper}" | tee -a "${RELEASE_DIR}/build.log"
 fi
 
 make -j"${JOBS}" O="${OUT_DIR}" ARCH="${ARCH}" LLVM=1 LLVM_IAS=1 CC="${CC}" "${targets[@]}" 2>&1 | tee -a "${RELEASE_DIR}/build.log"
