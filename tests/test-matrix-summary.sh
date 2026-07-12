@@ -107,11 +107,23 @@ required_patterns=(
   'AK3_marble_MELT_melt_sukisu-v4\.1\.3-b88403d2-code40813_susfs-v2\.2\.0_r5\.zip'
   'AK3_marble_MELT_melt_resukisu-v4\.1\.0-d0f59d06-code34989_susfs-v2\.2\.0_r5\.zip'
   '^## .*Credits$'
-  'KernelSU-Next team'
-  'SukiSU Ultra team'
-  'ReSukiSU team'
+  'pershoot/KernelSU-Next'
+  'SukiSU-Ultra/SukiSU-Ultra'
+  'ReSukiSU/ReSukiSU'
+  'osm0sis/AnyKernel3'
   'Built with GitHub Actions · for Marble'
 )
+
+if grep -Eq 'Pzqqt' "${summary}"; then
+  echo "FAIL: matrix summary must not hardcode Pzqqt in credits" >&2
+  exit 1
+fi
+
+# SUSFS-on fixtures: module note OK. When enable_susfs is false, no module push.
+if ! grep -Eq 'SUSFS userspace module|sidex15/susfs4ksu-module' "${summary}"; then
+  echo "FAIL: matrix SUSFS-enabled fixtures should mention userspace module" >&2
+  exit 1
+fi
 
 # Matrix summary may report ROM support from build-info, but must not hardcode only HyperOS wording
 # when artifacts omit rom_support. Current fixtures include HyperOS packaging labels only.

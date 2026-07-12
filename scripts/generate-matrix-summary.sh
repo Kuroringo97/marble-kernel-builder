@@ -300,15 +300,17 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
 
   echo "## 🛡️ SUSFS"
   echo
-  if [[ -n "${susfs_display}" ]]; then
+  if [[ "${enable_susfs_first}" == "true" ]]; then
     echo "| | |"
     echo "|:---|:---|"
     echo "| 🏷️ **Version** | \`${susfs_display}\` |"
     echo "| 🌿 **Kernel branch** | \`${susfs_branch}\` |"
-    echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    if [[ -n "${susfs_commit}" ]]; then
+      echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    fi
     echo "| 📦 **Userspace module** | [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module/releases) |"
     echo
-    echo "> After boot: install the SUSFS module matching this version, configure hiding rules, then reboot."
+    summary_susfs_module_note
   else
     echo "SUSFS is not enabled for this matrix."
   fi
@@ -363,7 +365,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
       echo "- 📦 [${display} manager app](${app_url}) for the ${display} ZIP"
     fi
   done
-  if [[ -n "${susfs_display}" ]]; then
+  if [[ "${enable_susfs_first}" == "true" ]]; then
     echo "- 🛡️ [KSU SUSFS module](https://github.com/sidex15/susfs4ksu-module/releases) matching \`${susfs_display}\`"
   fi
   echo
@@ -379,8 +381,8 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo "3. Flash to the **active slot** with [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)"
   echo "4. AnyKernel3 will verify codename (\`marble\` / \`marblein\`) and **auto-back up** boot to \`/sdcard/marble-kernel-backup/\`"
   echo "5. Reboot · install / open the matching manager app"
-  if [[ -n "${susfs_display}" ]]; then
-    echo "6. If SUSFS is enabled: install the SUSFS module, configure rules, reboot"
+  if [[ "${enable_susfs_first}" == "true" ]]; then
+    echo "6. Install the SUSFS userspace module, configure rules, reboot"
   fi
   echo
   echo "</details>"
@@ -395,8 +397,14 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo
   echo "| | |"
   echo "|:---|:---|"
-  echo "| 🧑‍💻 **Kernel source** | Pzqqt · Xiaomi / device maintainers |"
-  echo "| 📦 **AnyKernel3** | osm0sis |"
+  # Dynamic from build-info — never hardcode a maintainer name.
+  credit_author="${kernel_source_author:-${kernel_source_id:-kernel}}"
+  if [[ -n "${source_repo}" ]]; then
+    echo "| 🧑‍💻 **Kernel source** | [${credit_author}](https://github.com/${source_repo}) (\`${source_repo}\`) |"
+  else
+    echo "| 🧑‍💻 **Kernel source** | ${credit_author} |"
+  fi
+  echo "| 📦 **AnyKernel3** | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |"
   seen_managers=""
   for artifact_dir in "${artifact_dirs[@]}"; do
     build_info="${artifact_dir}/build-info.txt"
@@ -407,10 +415,15 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
     esac
     seen_managers="${seen_managers} ${manager_name}"
     display="$(manager_display "${manager_name}")"
-    echo "| 🔑 **${display}** | ${display} team |"
+    m_repo="$(get_info "${build_info}" manager_repo)"
+    if [[ -n "${m_repo}" ]]; then
+      echo "| 🔑 **${display}** | [\`${m_repo}\`](https://github.com/${m_repo}) |"
+    else
+      echo "| 🔑 **${display}** | ${display} |"
+    fi
   done
-  if [[ -n "${susfs_display}" ]]; then
-    echo "| 🛡️ **SUSFS** | simonpunk and contributors |"
+  if [[ "${enable_susfs_first}" == "true" ]]; then
+    echo "| 🛡️ **SUSFS** | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |"
   fi
   echo
   echo "---"
@@ -421,7 +434,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo
   echo "<br/>"
   echo
-  echo "\`marble\` · \`marblein\` · KernelSU family · SUSFS"
+  echo "\`marble\` · \`marblein\`"
   echo
   echo '</div>'
 } > "${MATRIX_SUMMARY}"

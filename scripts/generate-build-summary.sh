@@ -288,18 +288,25 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "---"
   echo
 
-  # ── Credits ──────────────────────────────────────────────────────────────
+  # ── Credits (dynamic from build-info — no hardcoded maintainer names) ────
   echo "## 🙏 Credits"
   echo
   echo "| | |"
   echo "|:---|:---|"
-  echo "| 🧑‍💻 **Kernel Source** | Pzqqt · Xiaomi/Poco kernel maintainers |"
-  echo "| 📦 **AnyKernel3** | osm0sis |"
-  if [[ "${manager_name}" != "none" ]]; then
-    echo "| 🔑 **${manager_display}** | ${manager_display} team |"
+  credit_author="${kernel_source_author:-${kernel_source_id:-kernel}}"
+  if [[ -n "${source_repo}" ]]; then
+    echo "| 🧑‍💻 **Kernel source** | [${credit_author}](https://github.com/${source_repo}) (\`${source_repo}\`) |"
+  else
+    echo "| 🧑‍💻 **Kernel source** | ${credit_author} |"
+  fi
+  echo "| 📦 **AnyKernel3** | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |"
+  if [[ "${manager_name}" != "none" && -n "${manager_repo}" ]]; then
+    echo "| 🔑 **${manager_display}** | [\`${manager_repo}\`](https://github.com/${manager_repo}) |"
+  elif [[ "${manager_name}" != "none" ]]; then
+    echo "| 🔑 **${manager_display}** | ${manager_display} |"
   fi
   if [[ "${ENABLE_SUSFS}" == "true" ]]; then
-    echo "| 🛡️ **SUSFS** | simonpunk and contributors |"
+    echo "| 🛡️ **SUSFS** | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |"
   fi
   echo
   echo "---"

@@ -71,7 +71,8 @@ required_patterns=(
   'SHA256 Checksums'
   'Credits'
   'pershoot/KernelSU-Next'
-  'gitlab\.com/simonpunk/susfs4ksu/-/commit/4003ecf2'
+  'mohdakil2426/android_kernel_xiaomi_marble'
+  'gitlab\.com/simonpunk/susfs4ksu'
   'marblein'
   'Flash the ZIP to the active slot'
   'GitHub Actions'
@@ -79,6 +80,12 @@ required_patterns=(
   'LTO'
   'melt-stable-candidate'
 )
+
+# Hardcoded maintainer names must never appear in credits.
+if grep -Eq 'Pzqqt' "${summary}"; then
+  echo "FAIL: summary credits must not hardcode Pzqqt" >&2
+  exit 1
+fi
 
 for pattern in "${required_patterns[@]}"; do
   if ! grep -Eq "${pattern}" "${summary}"; then
