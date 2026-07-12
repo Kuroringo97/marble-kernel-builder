@@ -66,6 +66,14 @@ on:
         options:
           - android-r416183b
           - llvm-22.1.8
+      lto:
+        description: "Clang LTO mode (thin=default free-runner safe; full needs more RAM)"
+        type: choice
+        default: thin
+        options:
+          - none
+          - thin
+          - full
       enable_ccache:
         description: Enable ccache
         type: boolean
@@ -79,7 +87,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
   cancel-in-progress: false
 
 jobs:
@@ -140,6 +148,7 @@ jobs:
       susfs_expected_version: ""
       build_scope: ${{ inputs.build_scope }}
       toolchain: ${{ inputs.toolchain }}
+      lto: ${{ inputs.lto }}
       enable_ccache: ${{ inputs.enable_ccache }}
       artifact_label: ${{ matrix.label }}
       run_policy_tests: false

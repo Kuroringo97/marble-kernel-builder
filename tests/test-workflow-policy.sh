@@ -157,6 +157,38 @@ grep -Fq 'toolchain: ${{ inputs.toolchain }}' "${matrix}" || {
   exit 1
 }
 
+grep -Fq 'lto:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the lto input" >&2
+  exit 1
+}
+
+grep -Fq 'default: thin' "${matrix}" || {
+  echo "FAIL: matrix workflow must default lto to thin" >&2
+  exit 1
+}
+
+for lto_opt in none thin full; do
+  grep -Fq -- "- ${lto_opt}" "${matrix}" || {
+    echo "FAIL: matrix workflow missing lto option: ${lto_opt}" >&2
+    exit 1
+  }
+done
+
+grep -Fq 'lto: ${{ inputs.lto }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass lto to build-core" >&2
+  exit 1
+}
+
+grep -Fq 'inputs.lto' "${wrapper}" || {
+  echo "FAIL: matrix concurrency or wiring must reference inputs.lto" >&2
+  exit 1
+}
+
+if ! grep -Eq 'LTO: \$\{\{ inputs\.lto \}\}|inputs\.lto' "${core}"; then
+  echo "FAIL: build-core must wire LTO env or inputs.lto" >&2
+  exit 1
+fi
+
 required_toolchain_patterns=(
   'Restore LLVM 22.1.8'
   'Fetch LLVM 22.1.8'
