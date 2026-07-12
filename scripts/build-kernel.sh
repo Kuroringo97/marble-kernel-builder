@@ -99,6 +99,14 @@ if [[ "${ENABLE_SUSFS}" == "true" ]]; then
   scripts/config --file "${OUT_DIR}/.config" -e KSU_SUSFS
 fi
 
+# Full/thin LTO of a GKI tree often OOMs or times out free GitHub runners during
+# "LTO vmlinux.o". Keep Melt (single defconfig) behavior; only force LTO off for
+# multi-fragment LOS-family sources unless the caller overrides.
+if [[ "${DEFCONFIG_MODE}" == "gki_fragments" && "${ALLOW_LTO:-false}" != "true" ]]; then
+  echo "Disabling Clang LTO for gki_fragments build (free-runner safe)" | tee -a "${RELEASE_DIR}/build.log"
+  scripts/config --file "${OUT_DIR}/.config" -d LTO_CLANG -d LTO_CLANG_FULL -d LTO_CLANG_THIN -e LTO_NONE || true
+fi
+
 make O="${OUT_DIR}" ARCH="${ARCH}" LLVM=1 LLVM_IAS=1 CC="${CC}" olddefconfig 2>&1 | tee -a "${RELEASE_DIR}/build.log"
 
 if [[ "${MANAGER}" != "none" ]] && ! grep -q '^CONFIG_KSU=y$' "${OUT_DIR}/.config"; then
