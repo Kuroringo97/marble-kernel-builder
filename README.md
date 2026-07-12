@@ -89,8 +89,9 @@ Named after the project / author. Pick one in **Build Marble Kernel**:
 | `evolution-x` | Evolution-X | [`Evolution-X-Devices/kernel_xiaomi_sm8450`](https://github.com/Evolution-X-Devices/kernel_xiaomi_sm8450) | `cnb` | **LOS-based** custom ROMs only |
 | `pablo` | Pablo | [`aosp-pablo/android_kernel_xiaomi_sm8450`](https://github.com/aosp-pablo/android_kernel_xiaomi_sm8450) | `16` | **LOS-based** custom ROMs only |
 
-- **HyperOS (`melt`)** uses `marble_defconfig`.
+- **HyperOS (`melt`)** uses `marble_defconfig` and the default Android `clang-r416183b` toolchain.
 - **LOS-family kernels** merge `gki_defconfig` + `vendor/waipio_GKI.config` + `vendor/xiaomi_GKI.config` + `vendor/marble_GKI.config` + `vendor/debugfs.config` (same chain as Lineage device trees).
+- **LOS-family kernels need `toolchain=llvm-22.1.8`** — they set `-march=armv9-a+…` which Android `clang-r416183b` (clang-12) rejects.
 - Optional **`source_ref`** overrides the preset default branch/tag/commit.
 
 **CI flow (simplified):**

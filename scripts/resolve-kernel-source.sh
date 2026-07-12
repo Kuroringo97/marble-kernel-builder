@@ -43,6 +43,7 @@ defconfig = preset.get("defconfig") or ""
 base_defconfig = preset.get("base_defconfig") or ""
 fragments = preset.get("config_fragments") or []
 config_fragments = " ".join(fragments)
+recommended_toolchain = preset.get("recommended_toolchain") or ""
 
 resolved_ref = source_ref_override or default_ref
 if not resolved_ref:
@@ -90,6 +91,7 @@ values = {
     "DEFCONFIG": defconfig,
     "BASE_DEFCONFIG": base_defconfig,
     "CONFIG_FRAGMENTS": config_fragments,
+    "RECOMMENDED_TOOLCHAIN": recommended_toolchain,
 }
 for key, value in values.items():
     print(f"{key}={shlex.quote(value)}")
@@ -110,6 +112,7 @@ mkdir -p release
   echo "DEFCONFIG=${DEFCONFIG}"
   echo "BASE_DEFCONFIG=${BASE_DEFCONFIG}"
   echo "CONFIG_FRAGMENTS=${CONFIG_FRAGMENTS}"
+  echo "RECOMMENDED_TOOLCHAIN=${RECOMMENDED_TOOLCHAIN}"
 } > release/kernel-source.env
 
 if [[ -n "${GITHUB_ENV:-}" ]]; then
@@ -126,6 +129,7 @@ if [[ -n "${GITHUB_ENV:-}" ]]; then
     echo "DEFCONFIG=${DEFCONFIG}"
     echo "BASE_DEFCONFIG=${BASE_DEFCONFIG}"
     echo "CONFIG_FRAGMENTS=${CONFIG_FRAGMENTS}"
+    echo "RECOMMENDED_TOOLCHAIN=${RECOMMENDED_TOOLCHAIN}"
   } >> "${GITHUB_ENV}"
 fi
 
@@ -148,4 +152,10 @@ if [[ "${DEFCONFIG_MODE}" == "single" ]]; then
 else
   echo "  base_defconfig=${BASE_DEFCONFIG}"
   echo "  fragments=${CONFIG_FRAGMENTS}"
+fi
+if [[ -n "${RECOMMENDED_TOOLCHAIN}" ]]; then
+  echo "  recommended_toolchain=${RECOMMENDED_TOOLCHAIN}"
+  if [[ -n "${TOOLCHAIN:-}" && "${TOOLCHAIN}" != "${RECOMMENDED_TOOLCHAIN}" ]]; then
+    echo "::warning::kernel_source '${KERNEL_SOURCE}' recommends toolchain '${RECOMMENDED_TOOLCHAIN}' (selected: ${TOOLCHAIN}). Older Android clang may fail on armv9 flags."
+  fi
 fi

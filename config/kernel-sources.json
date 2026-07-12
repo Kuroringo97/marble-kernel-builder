@@ -27,7 +27,8 @@
       "vendor/marble_GKI.config",
       "vendor/debugfs.config"
     ],
-    "notes": "Official LineageOS SM8450 kernel (Poco F5 / marble). Custom LOS-based ROMs only."
+    "recommended_toolchain": "llvm-22.1.8",
+    "notes": "Official LineageOS SM8450 kernel (Poco F5 / marble). Custom LOS-based ROMs only. Needs llvm-22.1.8 (armv9 flags)."
   },
   "evolution-x": {
     "display": "Evolution-X",
@@ -45,7 +46,8 @@
       "vendor/marble_GKI.config",
       "vendor/debugfs.config"
     ],
-    "notes": "Evolution-X device org SM8450 kernel for marble. Prefer clean branches without in-tree KSU."
+    "recommended_toolchain": "llvm-22.1.8",
+    "notes": "Evolution-X device org SM8450 kernel for marble. Prefer clean branches without in-tree KSU. Needs llvm-22.1.8 (armv9 flags)."
   },
   "pablo": {
     "display": "Pablo",
@@ -63,6 +65,7 @@
       "vendor/marble_GKI.config",
       "vendor/debugfs.config"
     ],
-    "notes": "aosp-pablo SM8450 kernel (Marble Development). LOS-based custom ROMs only."
+    "recommended_toolchain": "llvm-22.1.8",
+    "notes": "aosp-pablo SM8450 kernel (Marble Development). LOS-based custom ROMs only. Needs llvm-22.1.8 (armv9 flags)."
   }
 }
