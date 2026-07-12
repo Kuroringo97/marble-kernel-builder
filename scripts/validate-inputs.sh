@@ -51,6 +51,12 @@ case "${BUILD_SCOPE}" in
   *) echo "::error::BUILD_SCOPE must be image-only or full, got ${BUILD_SCOPE}"; exit 1 ;;
 esac
 
+LTO="${LTO:-thin}"
+case "${LTO}" in
+  none|thin|full) ;;
+  *) echo "::error::LTO must be none, thin, or full, got ${LTO}"; exit 1 ;;
+esac
+
 if [[ -z "${SOURCE_REPO}" || ! "${SOURCE_REPO}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
   echo "::error::SOURCE_REPO must look like owner/repo, got ${SOURCE_REPO}"
   exit 1
