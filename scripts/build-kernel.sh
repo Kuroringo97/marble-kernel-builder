@@ -9,6 +9,16 @@ MANAGER="${MANAGER:-none}"
 ENABLE_SUSFS="${ENABLE_SUSFS:-false}"
 JOBS="${JOBS:-$(nproc)}"
 USE_CCACHE="${USE_CCACHE:-true}"
+TOOLCHAIN="${TOOLCHAIN:-android-r416183b}"
+
+# Free GitHub-hosted runners (~7 GiB) often OOM (exit 137) while linking vmlinux
+# with LLVM 22 at full -j$(nproc). Cap parallelism for the heavy toolchain.
+if [[ -z "${JOBS_FORCE:-}" ]]; then
+  if [[ "${TOOLCHAIN}" == "llvm-22.1.8" ]] && (( JOBS > 2 )); then
+    echo "Capping JOBS from ${JOBS} to 2 for ${TOOLCHAIN} (OOM-safe on free runners)"
+    JOBS=2
+  fi
+fi
 
 pushd "${KERNEL_DIR}" >/dev/null
 mkdir -p "${OUT_DIR}" "${RELEASE_DIR}"
