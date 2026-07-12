@@ -1,16 +1,8 @@
 <div align="center">
 
-```
-  ███╗   ███╗ █████╗ ██████╗ ██████╗ ██╗     ███████╗
-  ████╗ ████║██╔══██╗██╔══██╗██╔══██╗██║     ██╔════╝
-  ██╔████╔██║███████║██████╔╝██████╔╝██║     █████╗
-  ██║╚██╔╝██║██╔══██║██╔══██╗██╔══██╗██║     ██╔══╝
-  ██║ ╚═╝ ██║██║  ██║██║  ██║██████╔╝███████╗███████╗
-  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
-                    K E R N E L
-```
+<img src="docs/assets/marble-banner.svg" alt="Marble Kernel Builder" width="720" />
 
-# Marble Kernel Builder
+<br/>
 
 **CI-driven AnyKernel3 kernel builder for Poco F5 / Redmi Note 12 Turbo**
 
@@ -18,18 +10,14 @@
 
 <br/>
 
-[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI_Builder-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/mohdakil2426/marble-kernel-builder/actions)
-[![Device](https://img.shields.io/badge/Device-Poco_F5_·_RN12_Turbo-EF5350?style=for-the-badge)](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)
-[![ROM](https://img.shields.io/badge/ROM-Stock_HyperOS-FF6900?style=for-the-badge)](https://www.mi.com/global/hyperos/)
-
-<br/>
-
+[![Build](https://img.shields.io/badge/GitHub_Actions-CI_Builder-2088FF?logo=githubactions&logoColor=white)](https://github.com/mohdakil2426/marble-kernel-builder/actions)
+[![Device](https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350)](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)
+[![ROM](https://img.shields.io/badge/ROM-Stock_HyperOS-FF6900)](https://www.mi.com/global/hyperos/)
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/tiann/KernelSU)
 [![KernelSU-Next](https://img.shields.io/badge/KernelSU--Next-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/KernelSU-Next/KernelSU-Next)
 [![SukiSU Ultra](https://img.shields.io/badge/SukiSU_Ultra-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/SukiSU-Ultra/SukiSU-Ultra)
 [![ReSukiSU](https://img.shields.io/badge/ReSukiSU-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/ReSukiSU/ReSukiSU)
 [![SUSFS](https://img.shields.io/badge/SUSFS-v2.2.0-FF6D00?logo=gitlab&logoColor=white)](https://gitlab.com/simonpunk/susfs4ksu)
-[![License](https://img.shields.io/badge/Artifacts-AS--IS-9E9E9E)](#-disclaimer)
 
 </div>
 
@@ -41,19 +29,14 @@
 >
 > Flashing a custom kernel always carries a risk of bootloop, data loss, or a bricked device.  
 > This builder is experimental — all artifacts are provided **as-is**.
-
-**Before you flash:**
-
-| | Rule |
-|---|---|
-| 💾 | **Back up** your `boot.img` from the **same** ROM / firmware |
-| 🧠 | **Read this README** and understand what you are flashing |
-| 🔓 | **Unlocked bootloader** is required |
-| 📱 | **Poco F5** (`marblein`) and **Redmi Note 12 Turbo** (`marble`) **only** |
-| 🟠 | **Official Xiaomi stock HyperOS only** — MIUI, AOSP, and custom ROMs are **unsupported** |
-
-By flashing these artifacts, **you accept all risk**.  
-The maintainer is not responsible for bricked devices, damaged hardware, or data loss.
+>
+> - 💾 **Always back up** your `boot.img` from the **same** ROM / firmware  
+> - 🧠 **Read this README** and understand what you are flashing  
+> - 🔓 **Unlocked bootloader** is required  
+> - 📱 **Poco F5** (`marblein`) and **Redmi Note 12 Turbo** (`marble`) **only**  
+> - 🟠 **Official Xiaomi stock HyperOS only** — MIUI, AOSP, and custom ROMs are unsupported  
+>
+> By flashing these artifacts, **you accept all risk**. The maintainer is not responsible for bricked devices or data loss.
 
 <div align="center">
 
