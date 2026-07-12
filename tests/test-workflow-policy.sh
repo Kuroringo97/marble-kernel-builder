@@ -281,8 +281,33 @@ grep -Fq 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' \
   exit 1
 }
 
-grep -Fq 'for test_script in tests/test-*.sh' .github/workflows/build-matrix.yml || {
-  echo "FAIL: matrix policy tests are not run before fan-out" >&2
+# Matrix setup runs a fast policy subset; full suite stays in preflight.
+required_matrix_setup_tests=(
+  'tests/test-workflow-policy.sh'
+  'tests/test-lto-policy.sh'
+  'tests/test-manager-policy.sh'
+  'tests/test-matrix-generator.sh'
+  'tests/test-susfs-presets.sh'
+)
+for setup_test in "${required_matrix_setup_tests[@]}"; do
+  grep -Fq "${setup_test}" .github/workflows/build-matrix.yml || {
+    echo "FAIL: matrix setup missing fast policy test: ${setup_test}" >&2
+    exit 1
+  }
+done
+
+if grep -Fq 'for test_script in tests/test-*.sh' .github/workflows/build-matrix.yml; then
+  echo "FAIL: matrix setup should run a fast subset, not all tests/test-*.sh" >&2
+  exit 1
+fi
+
+grep -Fq 'marble-matrix-summary-r${{ github.run_number }}' .github/workflows/build-matrix.yml || {
+  echo "FAIL: matrix workflow must upload combined summary artifact" >&2
+  exit 1
+}
+
+grep -Fq 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' .github/workflows/build-matrix.yml || {
+  echo "FAIL: matrix summary upload must use the pinned upload-artifact action" >&2
   exit 1
 }
 

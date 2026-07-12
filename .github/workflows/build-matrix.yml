@@ -106,7 +106,14 @@ jobs:
 
       - name: Validate builder policy
         run: |
-          for test_script in tests/test-*.sh; do
+          # Fast subset before fan-out; full suite remains in preflight.yml.
+          for test_script in \
+            tests/test-workflow-policy.sh \
+            tests/test-lto-policy.sh \
+            tests/test-manager-policy.sh \
+            tests/test-matrix-generator.sh \
+            tests/test-susfs-presets.sh
+          do
             env -u SOURCE_REPO -u SOURCE_REF -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
@@ -183,6 +190,14 @@ jobs:
         run: |
           bash scripts/generate-matrix-summary.sh
           cat matrix-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload combined summary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: marble-matrix-summary-r${{ github.run_number }}
+          path: matrix-summary.md
+          retention-days: 30
+          if-no-files-found: error
 
   release:
     name: Create ZIP-only draft release
