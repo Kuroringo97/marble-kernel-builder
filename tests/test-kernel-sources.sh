@@ -23,7 +23,7 @@ out="$(
   mkdir -p config scripts release
   cp "${repo_root}/config/kernel-sources.json" config/
   cp "${repo_root}/scripts/resolve-kernel-source.sh" scripts/
-  KERNEL_SOURCE=melt SOURCE_REF= bash scripts/resolve-kernel-source.sh
+  KERNEL_SOURCE=melt SOURCE_REF='' bash scripts/resolve-kernel-source.sh
   cat release/kernel-source.env
 )"
 assert_contains "${out}" "SOURCE_REPO=mohdakil2426/android_kernel_xiaomi_marble"
@@ -44,7 +44,7 @@ do
     cd "${tmp_dir}"
     rm -rf release
     mkdir -p release
-    KERNEL_SOURCE="${preset}" SOURCE_REF= bash scripts/resolve-kernel-source.sh >/dev/null
+    KERNEL_SOURCE="${preset}" SOURCE_REF='' bash scripts/resolve-kernel-source.sh >/dev/null
     cat release/kernel-source.env
   )"
   assert_contains "${out}" "SOURCE_REPO=${repo}"
@@ -67,7 +67,7 @@ out="$(
 assert_contains "${out}" "SOURCE_REF=lineage-23.1"
 
 # Unknown preset must fail
-if KERNEL_SOURCE=not-a-real-preset SOURCE_REF= bash scripts/resolve-kernel-source.sh >/dev/null 2>&1; then
+if KERNEL_SOURCE=not-a-real-preset SOURCE_REF='' bash scripts/resolve-kernel-source.sh >/dev/null 2>&1; then
   echo "FAIL: unknown kernel_source should be rejected" >&2
   exit 1
 fi
