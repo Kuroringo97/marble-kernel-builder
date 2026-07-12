@@ -189,6 +189,11 @@ if ! grep -Eq 'LTO: \$\{\{ inputs\.lto \}\}|inputs\.lto' "${core}"; then
   exit 1
 fi
 
+if ! grep -Eq 'Setup swap|swap-size-gb' "${core}"; then
+  echo "FAIL: build-core must set up swap for LTO builds" >&2
+  exit 1
+fi
+
 required_toolchain_patterns=(
   'Restore LLVM 22.1.8'
   'Fetch LLVM 22.1.8'
