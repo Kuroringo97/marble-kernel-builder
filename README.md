@@ -1,17 +1,22 @@
 <div align="center">
 
-# 🪨 Marble Kernel Builder
+<img src="docs/assets/marble-banner.svg" alt="Marble Kernel Builder" width="720" />
+
+<br/>
 
 **CI-driven AnyKernel3 kernel builder for Poco F5 / Redmi Note 12 Turbo**
 
+`marble` · `marblein`
+
+<br/>
+
 [![Build](https://img.shields.io/badge/GitHub_Actions-CI_Builder-2088FF?logo=githubactions&logoColor=white)](https://github.com/mohdakil2426/marble-kernel-builder/actions)
+[![Device](https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350)](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/tiann/KernelSU)
 [![KernelSU-Next](https://img.shields.io/badge/KernelSU--Next-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/KernelSU-Next/KernelSU-Next)
 [![SukiSU Ultra](https://img.shields.io/badge/SukiSU_Ultra-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/SukiSU-Ultra/SukiSU-Ultra)
 [![ReSukiSU](https://img.shields.io/badge/ReSukiSU-Supported-4CAF50?logo=linux&logoColor=white)](https://github.com/ReSukiSU/ReSukiSU)
 [![SUSFS](https://img.shields.io/badge/SUSFS-v2.2.0-FF6D00?logo=gitlab&logoColor=white)](https://gitlab.com/simonpunk/susfs4ksu)
-[![Device](https://img.shields.io/badge/Device-Poco_F5_%2F_Redmi_Note_12_Turbo-EF5350)](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)
-[![ROM](https://img.shields.io/badge/ROM-Stock_HyperOS_Only-FF6900)](https://www.mi.com/global/hyperos/)
 
 </div>
 
@@ -19,15 +24,18 @@
 
 ## ⚠️ Disclaimer
 
-> Flashing a custom kernel always carries a risk of bootloop or data loss. This builder is experimental — artifacts are provided as-is.
+> **Your warranty may no longer be valid.**
 >
-> - 💾 **Always back up your `boot.img`** from the same ROM/firmware before flashing
-> - 🧠 **Understand what you are flashing** — read this README fully
-> - 🔓 Unlocked bootloader is required
-> - 📱 **Poco F5 (`marblein`) and Redmi Note 12 Turbo (`marble`) only**
-> - 🟠 **Official Xiaomi stock HyperOS only** — MIUI, AOSP, and custom ROMs are unsupported
+> Flashing a custom kernel always carries a risk of bootloop, data loss, or a bricked device.  
+> This builder is experimental — all artifacts are provided **as-is**.
 >
-> By flashing these artifacts **you accept all risk**. The maintainer is not responsible for bricked devices or data loss.
+> - 💾 **Always back up** your `boot.img` from the **same** ROM / firmware  
+> - 🧠 **Read this README** and understand what you are flashing  
+> - 🔓 **Unlocked bootloader** is required  
+> - 📱 **Poco F5** (`marblein`) and **Redmi Note 12 Turbo** (`marble`) **only**  
+> - 🧩 Use a build that matches your **device + ROM** — wrong firmware combos can bootloop  
+>
+> By flashing these artifacts, **you accept all risk**. The maintainer is not responsible for bricked devices or data loss.
 
 <div align="center">
 
@@ -37,89 +45,173 @@
 
 ---
 
-## 📖 Repository Model
+## ✨ Features
 
-This project uses a **two-repo separation** to keep the kernel source fork clean:
+| Feature | Description |
+|--------|-------------|
+| 🤖 **Multi-manager builds** | KernelSU, KernelSU-Next, SukiSU Ultra, ReSukiSU, or a clean no-root baseline |
+| 🛡️ **SUSFS integration** | Optional SUSFS (`v2.2.0` / `v2.1.0` / custom) for supported managers |
+| ⚙️ **GitHub Actions CI** | One-click matrix builds — single manager or parallel multi-manager |
+| 📦 **AnyKernel3 packages** | Flashable ZIPs with device checks and automatic boot backup |
+| 🔒 **Pinned & verified** | Commit-pinned toolchains, allowlisted managers, policy tests, ZIP attestations |
+| 🚀 **Draft releases** | Optional ZIP-only draft release from a successful matrix run |
 
-| Repo | Purpose |
-|---|---|
-| [`mohdakil2426/android_kernel_xiaomi_marble`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) | Clean upstream kernel source fork — never patched locally |
-| [`mohdakil2426/marble-kernel-builder`](https://github.com/mohdakil2426/marble-kernel-builder) | This repo — CI workflows, scripts, config, and docs |
+---
 
-GitHub Actions checks out both repos separately, applies manager and SUSFS patches **only inside the temporary CI workspace**, builds, packages, and uploads artifacts. The source fork remains permanently clean.
+## 📱 Supported Devices
+
+| Device | Codename |
+|--------|----------|
+| **Poco F5** | `marblein` |
+| **Redmi Note 12 Turbo** | `marble` |
+
+> Always flash a build intended for your device and ROM base. Other devices are not supported.
+
+---
+
+## 🏗️ How This Repo Works
+
+Marble uses a **two-repo model** so the kernel source fork stays clean forever:
+
+| Repository | Role |
+|------------|------|
+| [`mohdakil2426/android_kernel_xiaomi_marble`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) | Clean kernel source fork — **never patched in-tree** |
+| [`mohdakil2426/marble-kernel-builder`](https://github.com/mohdakil2426/marble-kernel-builder) | This repo — workflows, scripts, config, packaging |
+
+**CI flow (simplified):**
+
+```text
+Checkout builder + kernel source
+        ↓
+Apply manager + SUSFS (temp workspace only)
+        ↓
+Compile with pinned toolchain
+        ↓
+Package AnyKernel3 ZIP + metadata
+        ↓
+Upload artifacts  ·  optional draft release
+```
+
+Patches never land on the source fork — only inside the temporary CI workspace.
 
 ---
 
 ## 🤖 Manager Matrix
 
 | Manager | Without SUSFS | With SUSFS | Notes |
-|---|:---:|:---:|---|
-| `none` | ✅ | ❌ | Baseline no-root build only |
-| `kernelsu` | ✅ | ❌ | Official only; no compatible SUSFS integration yet |
-| `kernelsu-next` | ✅ | ✅ | Non-SUSFS → official `dev`; SUSFS → `pershoot/dev-susfs` |
-| `sukisu-ultra` | ✅ | ✅ | Non-SUSFS → `main`; SUSFS → official `builtin` |
-| `resukisu` | ✅ | ✅ | `main` includes built-in manager-side SUSFS support |
+|---------|:-------------:|:----------:|-------|
+| `none` | ✅ | ❌ | Baseline no-root validation build |
+| `kernelsu` | ✅ | ❌ | Official only — no compatible SUSFS path yet |
+| `kernelsu-next` | ✅ | ✅ | No SUSFS → official `dev` · SUSFS → `pershoot/dev-susfs` |
+| `sukisu-ultra` | ✅ | ✅ | No SUSFS → `main` · SUSFS → official `builtin` |
+| `resukisu` | ✅ | ✅ | `main` includes built-in manager-side SUSFS |
 
-> **Policy:** Only official upstream manager repositories are used. Custom or forked manager repositories are rejected by the allowlist enforced at CI time. The one exception is `pershoot/KernelSU-Next@dev-susfs` for KernelSU-Next + SUSFS builds, which is a CI-proven fork branch carrying SUSFS integration based on the official `dev` branch.
+### Policy
+
+- Only **official upstream** manager repositories are allowlisted at CI time.
+- **Exception:** `pershoot/KernelSU-Next@dev-susfs` for KernelSU-Next + SUSFS (CI-proven fork of official `dev`).
+- Custom / random forked manager repos are **rejected**.
+
+<details>
+<summary><b>Recommended SUSFS manager set</b></summary>
+
+<br/>
+
+For final SUSFS builds, use only:
+
+- `kernelsu-next`
+- `sukisu-ultra`
+- `resukisu`
+
+Do **not** enable SUSFS with `none` or `kernelsu`.
+
+</details>
 
 ---
 
 ## ⚙️ Workflows
 
-Two workflows are available. `build-matrix.yml` is the only public build and draft-release entrypoint: select one manager for one build or several managers for a parallel matrix build.
+| Workflow | File | When to use |
+|----------|------|-------------|
+| **Build Marble Kernel** | [`build-matrix.yml`](.github/workflows/build-matrix.yml) | Build one or many managers · combined summary · optional draft release |
+| **Marble Builder Preflight** | [`preflight.yml`](.github/workflows/preflight.yml) | Cheap static checks (shellcheck, actionlint, policy tests) |
 
-| Workflow | Use when |
-|---|---|
-| **Build Marble Kernel** (`build-matrix.yml`) | Select one or many managers; each gets a separate artifact, one combined summary, and optionally one draft release |
-| **Marble Builder Preflight** (`preflight.yml`) | Cheap static checks for workflows, shell scripts, policy tests, actionlint, and shellcheck |
+### Quick start — build
 
-### `build-matrix.yml` Inputs
+1. Open **[Actions → Build Marble Kernel → Run workflow](https://github.com/mohdakil2426/marble-kernel-builder/actions)**
+2. Select manager checkbox(es)
+3. Set SUSFS / source / toolchain / scope as needed
+4. Run · download artifacts when green
+
+### Draft release
+
+1. Same workflow as above  
+2. Enable **`create_draft_release`**  
+3. Release job runs only if **all** selected builds **and** the combined summary pass  
+4. Review the **draft** on Releases · publish manually when ready  
+
+> Draft assets contain **only clean flashable ZIPs**.  
+> Checksums and build metadata stay in Actions artifacts (used for internal verification).  
+> The checkbox is the release gate — no GitHub Environment / Deployment approval is used.
+
+<details>
+<summary><b>All workflow inputs</b></summary>
+
+<br/>
 
 | Input | Default | Description |
-|---|---|---|
-| `build_none` | `false` | Build baseline no-root kernel |
-| `build_kernelsu` | `false` | Build KernelSU (no SUSFS) |
-| `build_kernelsu_next` | `false` | Build KernelSU-Next |
-| `build_sukisu_ultra` | `false` | Build SukiSU Ultra |
-| `build_resukisu` | `false` | Build ReSukiSU |
-| `enable_susfs` | `false` | Enable SUSFS for all managers that support it |
-| `susfs_version` | `v2.2.0` | SUSFS preset version |
-| `susfs_ref` | *(empty)* | SUSFS branch/tag/commit, used only with the custom preset |
+|-------|---------|-------------|
+| `build_none` | `false` | Baseline no-root kernel |
+| `build_kernelsu` | `false` | KernelSU (no SUSFS) |
+| `build_kernelsu_next` | `false` | KernelSU-Next |
+| `build_sukisu_ultra` | `false` | SukiSU Ultra |
+| `build_resukisu` | `false` | ReSukiSU |
+| `enable_susfs` | `false` | Enable SUSFS for managers that support it |
+| `susfs_version` | `v2.2.0` | `v2.2.0` · `v2.1.0` · `custom` |
+| `susfs_ref` | *(empty)* | Branch/tag/commit — only with `custom` |
 | `source_repo` | `mohdakil2426/android_kernel_xiaomi_marble` | Kernel source repository |
-| `source_ref` | `melt-rebase` | Kernel source branch, tag, or commit |
+| `source_ref` | `melt-rebase` | Branch, tag, or commit |
 | `build_scope` | `image-only` | `image-only` or `full` |
-| `enable_ccache` | `true` | Use ccache to accelerate compatible rebuilds |
-| `create_draft_release` | `false` | If enabled, create one ZIP-only draft release after all selected builds and the combined summary pass |
+| `toolchain` | `android-r416183b` | `android-r416183b` (default) or experimental `llvm-22.1.8` |
+| `enable_ccache` | `true` | ccache for compatible rebuilds |
+| `create_draft_release` | `false` | Create one ZIP-only draft release after a full success |
 
-### Create a draft release
-
-1. Open **Actions → Build Marble Kernel → Run workflow**.
-2. Select the manager checkboxes and normal build inputs.
-3. Enable `create_draft_release` only when you want a draft release from that same successful run.
-4. The release job waits for all selected builds and the combined summary to pass, downloads the same run's manager artifacts, verifies every checksum, and creates one draft release.
-5. Review the draft on the Releases page and publish it manually when ready.
-
-This flow does not use a GitHub Environment approval, so GitHub does not create Deployment records for release approval. The manual checkbox is the release gate, and the release remains a draft until it is manually published. Draft release assets contain only clean flashable ZIPs; checksums and build metadata remain in Actions artifacts and are used internally for verification.
+</details>
 
 ---
 
-## 📦 Artifact Layout
+## 🧪 Safe Build Order
 
-### ✅ Successful build artifact
+Run in order. Verify each step before the next:
 
-```
+| Step | What to build |
+|:----:|---------------|
+| **1** | `build_none` · SUSFS **off** · `image-only` |
+| **2** | `build_none` · `full` scope *(only if needed)* |
+| **3** | One root manager at a time · SUSFS **off** |
+| **4** | `kernelsu-next` / `sukisu-ultra` / `resukisu` · SUSFS **on** |
+| **5** | Combine managers in one matrix · optional `create_draft_release` |
+
+---
+
+## 📦 Artifacts
+
+### Layout
+
+```text
 marble-flash-<label>-<scope>-r<run>/
 ├─ AK3_Marble-HyperOS_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip
 ├─ AK3_Marble-HyperOS_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip.sha256
-├─ build-info.txt      ← exact resolved refs and workflow metadata
-├─ build-info.json     ← structured metadata for tooling and future summaries
-├─ summary.md          ← build summary (also used for release notes)
-├─ zip-audit.txt       ← structure audit results
+├─ build-info.txt       # resolved refs + workflow metadata
+├─ build-info.json      # structured metadata for tooling
+├─ summary.md           # build summary (also used as release notes)
+├─ zip-audit.txt        # structure audit results
 └─ ccache-stats.txt
 ```
 
-Examples:
-```
+### Name examples
+
+```text
 AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
 AK3_Marble-HyperOS_SukiSUUltra-v4.1.3-code40813_SUSFS-v2.2.0_r9.zip
 AK3_Marble-HyperOS_ReSukiSU-v4.1.0-code34990_SUSFS-v2.2.0_r9.zip
@@ -127,112 +219,141 @@ AK3_Marble-HyperOS_KernelSU-v1.0.3-code12345_NoSUSFS_r9.zip
 AK3_Marble-HyperOS_NoRoot_NoSUSFS_r9.zip
 ```
 
-> The manager build version and numeric code are preferred. Missing metadata falls back to the resolved tag and then a 7-character manager commit.
+> Versioning prefers manager **build version + numeric code**.  
+> Fallback: resolved tag → 7-character manager commit.
+
+---
 
 ## 🔒 Verified Defaults
 
 Last verified: **2026-06-23**
 
-| Component | Default Ref | Pinned Commit / Version |
-|---|---|---|
-| SUSFS (v2.2.0) | `gki-android12-5.10` | `4003ecf2d01c6d13fa8edf6c4f2607365738dc3d` |
-| SUSFS (v2.1.0) | `gki-android12-5.10` | `86114db0c49f20fa7857b8b559f3ab87cbc2d00d` |
-| KernelSU | `tiann/KernelSU@main` | SUSFS disabled (no compatible official integration) |
-| KernelSU-Next (no SUSFS) | `KernelSU-Next/KernelSU-Next@dev` | Official |
-| KernelSU-Next (+ SUSFS) | `pershoot/KernelSU-Next@dev-susfs` | CI-proven |
-| SukiSU Ultra | `SukiSU-Ultra/SukiSU-Ultra@main` / `builtin` | Official |
-| ReSukiSU | `ReSukiSU/ReSukiSU@main` | Built-in SUSFS support |
-| Android kernel Clang | `clang-r416183b` | Declared by `build.config.common` |
-| Android Clang source | `master-kernel-build-2021` | `6e3223f76384455acde43affde3df0ea9df66c0d` |
-| AnyKernel3 | pinned commit | `dca9dc370838d919d56c1f59ec78b27a14a72c68` |
+| Component | Default / pin |
+|-----------|----------------|
+| **SUSFS v2.2.0** | `gki-android12-5.10` · `4003ecf2…` |
+| **SUSFS v2.1.0** | `gki-android12-5.10` · `86114db0…` |
+| **KernelSU** | `tiann/KernelSU@main` · SUSFS disabled |
+| **KernelSU-Next** | `KernelSU-Next/KernelSU-Next@dev` |
+| **KernelSU-Next + SUSFS** | `pershoot/KernelSU-Next@dev-susfs` |
+| **SukiSU Ultra** | `main` / `builtin` (SUSFS) |
+| **ReSukiSU** | `ReSukiSU/ReSukiSU@main` |
+| **Android Clang** | `clang-r416183b` · commit `6e3223f7…` |
+| **LLVM (experimental)** | `22.1.8` · SHA-256 verified |
+| **AnyKernel3** | `dca9dc370838d919d56c1f59ec78b27a14a72c68` |
+
+Full pin table: [`docs/versions.md`](docs/versions.md)
 
 ---
 
-## CI Reliability and Performance
+## 🛡️ CI Reliability
 
-- Official GitHub actions are pinned to immutable commits and checked weekly by Dependabot.
-- Android Clang is fetched from the official Git repository using a partial clone plus sparse checkout, then verified against its pinned commit before use.
-- Ccache is capped at 2 GiB per build identity and keyed by compiler, source, manager, SUSFS, scope, and build configuration; compiler validation uses content checks.
-- Matrix policy tests run once before fan-out. Disk cleanup runs only when available space is below 20 GiB.
-- Flash artifacts use zero recompression with 30-day retention.
-- Build jobs have read-only repository permission for contents. Artifact provenance attestations use GitHub's OIDC-backed attestation permission on the final ZIP.
-- Release write permission exists only in the conditional `build-matrix.yml` release job, which runs when `create_draft_release` is enabled and all selected builds pass. Build jobs stay read-only.
-- Duplicate manual dispatches are guarded with workflow concurrency groups to avoid piling up accidental repeated runs.
+| Area | Practice |
+|------|----------|
+| **Actions** | Official actions pinned to immutable commits · Dependabot weekly |
+| **Android Clang** | Partial clone + sparse checkout · pinned commit verified before use |
+| **LLVM 22.1.8** | Official release only · SHA-256 check · separate cache |
+| **ccache** | 2 GiB cap · key by compiler / source / manager / SUSFS / scope |
+| **Policy** | Matrix policy tests once before fan-out |
+| **Disk** | Cleanup only if free space &lt; 20 GiB |
+| **Artifacts** | Zero recompression · 30-day retention |
+| **Permissions** | Build jobs `contents: read` · write only on optional release job |
+| **Provenance** | OIDC-backed artifact attestations on final ZIPs |
+| **Concurrency** | Groups prevent stacked accidental dispatches |
 
-Previous verification on **2026-06-24**: [three-manager matrix run 28081895022](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28081895022) and [protected promotion run 28082454769](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28082454769) passed on commit `28f3830`. All downloaded ZIP checksums matched, and draft `marble-hyperos-r10` contains only the three clean flashable ZIPs. The current release flow now creates the ZIP-only draft directly from the successful matrix run when `create_draft_release` is enabled.
+<details>
+<summary><b>Recent verification</b></summary>
+
+<br/>
+
+**2026-06-24** — commit `28f3830`
+
+- [Three-manager matrix](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28081895022)
+- [Protected promotion](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28082454769)
+
+All ZIP checksums matched. Draft `marble-hyperos-r10` contained only clean flashable ZIPs.
+
+</details>
 
 ---
 
-## 🧪 Safe Build Order
-
-Run these in order — verify each before proceeding to the next:
-
-1. Select only `build_none` with SUSFS disabled and `image-only` scope.
-2. Repeat `build_none` with `full` scope if full outputs are required.
-3. Select one root manager at a time with SUSFS disabled.
-4. Select `build_kernelsu_next`, `build_sukisu_ultra`, and/or `build_resukisu` with SUSFS enabled.
-5. Once verified, combine the desired managers in one matrix run. Enable `create_draft_release` if that successful run should also create a draft release.
-
----
-
-## 🚀 Flashing Instructions
+## 🚀 Flashing Guide
 
 ### Prerequisites
 
-- Unlocked bootloader
-- Poco F5 (`marblein`) or Redmi Note 12 Turbo (`marble`) only
-- Official Xiaomi stock HyperOS only; MIUI, AOSP, and custom ROMs are unsupported
-- Stock `boot.img` from the **same ROM/firmware** stored somewhere safe (outside the device)
-- Matching manager app for root builds
+- Unlocked bootloader  
+- Device: **Poco F5** (`marblein`) or **Redmi Note 12 Turbo** (`marble`)  
+- A kernel build that matches your **device + ROM**  
+- Stock / original `boot.img` from the **same** ROM/firmware, stored **off-device**  
+- Matching manager app for root builds  
 
-### Via Kernel Flasher *(recommended)*
+### Flash with Kernel Flasher *(recommended)*
 
 1. Download the flashable `.zip`
-2. Verify it against the SHA256 shown in the build or release summary
-3. Flash the ZIP to the active slot using [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
-4. The AnyKernel3 installer will verify the device codename (`marble` / `marblein`) and **automatically back up the current boot image** to `/sdcard/marble-kernel-backup/` before writing
-5. Install the matching manager app after boot
-6. If SUSFS is enabled, install the [KSU SUSFS module](https://github.com/sidex15/susfs4ksu-module/releases) and configure hiding rules
+2. Verify **SHA-256** against the build or release summary
+3. Flash to the **active slot** with [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)
+4. AnyKernel3 will:
+   - verify codename (`marble` / `marblein`)
+   - **auto-back up** current boot to `/sdcard/marble-kernel-backup/`
+5. Reboot · install the matching manager app
+6. If SUSFS is enabled: install the [KSU SUSFS module](https://github.com/sidex15/susfs4ksu-module/releases) and configure hiding rules
 
-### Recovery from bootloop
+### Bootloop recovery
 
-Flash the stock `boot.img` from the same ROM/firmware back to the active slot. On A/B slot devices, target the correct slot or flash both.
+Flash the stock `boot.img` from the **same** ROM/firmware back to the active slot.  
+On A/B devices, target the correct slot (or both if needed).
 
 ---
 
-## 🔗 Related Resources
+## 🔗 Resources
 
 | Resource | Link |
-|---|---|
-| 📱 Kernel Source Fork | [mohdakil2426/android_kernel_xiaomi_marble](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) |
-| 🏗️ Upstream Source | [Pzqqt/android_kernel_xiaomi_marble](https://github.com/Pzqqt/android_kernel_xiaomi_marble) |
+|----------|------|
+| 📱 Kernel source fork | [mohdakil2426/android_kernel_xiaomi_marble](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) |
+| 🏗️ Upstream source | [Pzqqt/android_kernel_xiaomi_marble](https://github.com/Pzqqt/android_kernel_xiaomi_marble) |
 | 🫙 AnyKernel3 | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |
-| 🔑 KernelSU | [tiann/KernelSU](https://github.com/tiann/KernelSU) |
-| 🔑 KernelSU-Next | [KernelSU-Next/KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next) |
-| 🔑 SukiSU Ultra | [SukiSU-Ultra/SukiSU-Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) |
+| 🔐 KernelSU | [tiann/KernelSU](https://github.com/tiann/KernelSU) |
+| 🚀 KernelSU-Next | [KernelSU-Next/KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next) |
+| ✨ SukiSU Ultra | [SukiSU-Ultra/SukiSU-Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) |
 | 🔑 ReSukiSU | [ReSukiSU/ReSukiSU](https://github.com/ReSukiSU/ReSukiSU) |
 | 🛡️ SUSFS | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |
+| 📦 SUSFS module | [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) |
 | ⚡ Kernel Flasher | [fatalcoder524/KernelFlasher](https://github.com/fatalcoder524/KernelFlasher) |
-| 📦 SUSFS Module | [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) |
+| 🔥 WildKernels (reference) | [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS) |
 
 ---
 
-## 🙏 Credits
+## 🏆 Credits
 
-- **Pzqqt** — upstream Marble kernel source and maintenance
-- **osm0sis** — AnyKernel3 flashing framework
-- **tiann** — KernelSU
-- **KernelSU-Next team** — KernelSU-Next
-- **SukiSU Ultra team** — SukiSU Ultra
-- **ReSukiSU team** — ReSukiSU
-- **simonpunk** — susfs4ksu patches
-- **WildKernels** — reference CI and release patterns
-- Xiaomi/MIUI kernel source maintainers
+| Project / person | Contribution |
+|------------------|--------------|
+| **Pzqqt** | Upstream Marble kernel source & maintenance |
+| **osm0sis** | AnyKernel3 flashing framework |
+| **tiann** | KernelSU |
+| **KernelSU-Next team** | KernelSU-Next |
+| **SukiSU Ultra team** | SukiSU Ultra |
+| **ReSukiSU team** | ReSukiSU |
+| **simonpunk** | susfs4ksu patches |
+| **sidex15** | SUSFS userspace module |
+| **WildKernels** | Reference CI & release patterns |
+| Xiaomi / MIUI maintainers | Device kernel base |
+
+🙏 Special thanks to the open-source community.
+
+---
+
+## 💬 Support
+
+- 🐛 [Open an issue](https://github.com/mohdakil2426/marble-kernel-builder/issues) for builder / CI problems  
+- 📖 See [`docs/`](docs/) for versions, manager matrix, and verification notes  
 
 ---
 
 <div align="center">
 
-⚡ Built with ❤️ using GitHub Actions
+**⚡ Built with GitHub Actions · for Marble**
+
+<br/>
+
+`marble` · `marblein` · KernelSU family · SUSFS
 
 </div>

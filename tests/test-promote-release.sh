@@ -64,6 +64,21 @@ if grep -Evq '\.zip$' "${tmp_dir}/release-assets.txt"; then
   exit 1
 fi
 
+single_root="${tmp_dir}/valid-single-root"
+make_artifact "${tmp_dir}" valid-single-root kernelsu-next \
+  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
+
+MATRIX_ARTIFACTS_DIR="${single_root}" \
+MATRIX_SUMMARY="${tmp_dir}/single-matrix-summary.md" \
+RELEASE_ASSETS_FILE="${tmp_dir}/single-release-assets.txt" \
+BUILD_SCOPE=image-only \
+  bash scripts/prepare-promoted-release.sh
+
+[[ "$(wc -l < "${tmp_dir}/single-release-assets.txt")" -eq 1 ]] || {
+  echo "FAIL: single direct artifact release manifest should contain one ZIP" >&2
+  exit 1
+}
+
 bad_dir="${tmp_dir}/bad-checksum"
 cp -R "${valid_dir}" "${bad_dir}"
 printf 'tampered\n' >> "$(find "${bad_dir}" -name '*.zip' -print -quit)"

@@ -12,9 +12,17 @@ if [[ ! -d "${MATRIX_ARTIFACTS_DIR}" ]]; then
   exit 1
 fi
 
-mapfile -d '' -t artifact_dirs < <(
+artifact_dirs=()
+if [[ -f "${MATRIX_ARTIFACTS_DIR}/build-info.txt" && \
+      -f "${MATRIX_ARTIFACTS_DIR}/build-info.json" && \
+      -f "${MATRIX_ARTIFACTS_DIR}/zip-name.env" ]]; then
+  artifact_dirs+=("${MATRIX_ARTIFACTS_DIR}")
+fi
+
+mapfile -d '' -t nested_artifact_dirs < <(
   find "${MATRIX_ARTIFACTS_DIR}" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z
 )
+artifact_dirs+=("${nested_artifact_dirs[@]}")
 if [[ "${#artifact_dirs[@]}" -eq 0 ]]; then
   echo "::error::No matrix artifacts found in ${MATRIX_ARTIFACTS_DIR}"
   exit 1
@@ -28,10 +36,15 @@ detected_scope=""
 for artifact_dir in "${artifact_dirs[@]}"; do
   artifact_name="$(basename "${artifact_dir}")"
   if [[ ! "${artifact_name}" =~ -(image-only|full)-r[0-9]+$ ]]; then
-    echo "::error::Artifact name does not contain a valid build scope: ${artifact_name}"
-    exit 1
+    if [[ "${artifact_dir}" == "${MATRIX_ARTIFACTS_DIR}" && "${BUILD_SCOPE}" =~ ^(image-only|full)$ ]]; then
+      artifact_scope="${BUILD_SCOPE}"
+    else
+      echo "::error::Artifact name does not contain a valid build scope: ${artifact_name}"
+      exit 1
+    fi
+  else
+    artifact_scope="${BASH_REMATCH[1]}"
   fi
-  artifact_scope="${BASH_REMATCH[1]}"
   if [[ -n "${detected_scope}" && "${artifact_scope}" != "${detected_scope}" ]]; then
     echo "::error::Target run contains mixed build scopes"
     exit 1

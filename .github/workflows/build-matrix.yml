@@ -54,6 +54,13 @@ on:
         options:
           - image-only
           - full
+      toolchain:
+        description: Compiler toolchain
+        type: choice
+        default: android-r416183b
+        options:
+          - android-r416183b
+          - llvm-22.1.8
       enable_ccache:
         description: Enable ccache
         type: boolean
@@ -127,6 +134,7 @@ jobs:
       susfs_ref: ${{ inputs.susfs_ref }}
       susfs_expected_version: ""
       build_scope: ${{ inputs.build_scope }}
+      toolchain: ${{ inputs.toolchain }}
       enable_ccache: ${{ inputs.enable_ccache }}
       artifact_label: ${{ matrix.label }}
       run_policy_tests: false

@@ -109,4 +109,19 @@ if [[ "$(grep -c '^## 📲 Installation$' "${summary}")" -ne 1 ]]; then
   exit 1
 fi
 
+single_root="${tmp_dir}/single-root"
+make_artifact "${single_root}" \
+  kernelsu-next pershoot/KernelSU-Next dev-susfs 5a8a604a9078c2fbfb50e2b0cba87b3a6f4da1c2 v3.2.0 33201 '' \
+  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33201_SUSFS-v2.2.0_r5.zip ksunext
+
+MATRIX_ARTIFACTS_DIR="${single_root}" MATRIX_SUMMARY="${tmp_dir}/single-matrix-summary.md" \
+  BUILD_SCOPE=image-only GITHUB_RUN_NUMBER=5 \
+  bash scripts/generate-matrix-summary.sh >/dev/null
+
+single_summary="${tmp_dir}/single-matrix-summary.md"
+if ! grep -Eq '<summary><b>KernelSU-Next</b> — v3\.2\.0 · code 33201 · ✅ Passed</summary>' "${single_summary}"; then
+  echo "FAIL: matrix summary should support one artifact extracted directly into the artifacts directory" >&2
+  exit 1
+fi
+
 echo "Matrix summary tests passed"

@@ -48,6 +48,8 @@ susfs_branch="$(get_info susfs_kernel_branch)"
 susfs_commit="$(get_info susfs_commit)"
 susfs_reported="$(get_info susfs_reported_version)"
 susfs_url="$(get_info susfs_url)"
+android_clang_version="$(get_info android_clang_version)"
+android_clang_commit="$(get_info android_clang_commit)"
 zip_sha="$(sha256sum "${release_dir}/${zip_name}" | awk '{print $1}')"
 image_sha="$(sha256sum "${release_dir}/Image" | awk '{print $1}')"
 zip_size="$(du -h "${release_dir}/${zip_name}" | awk '{print $1}')"
@@ -129,7 +131,10 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "| 🧬 **Kernel Base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build Scope** | \`${BUILD_SCOPE}\` |"
   echo "| 📦 **Source** | [\`${source_ref} @ $(short_commit "${source_commit}")\`](https://github.com/${source_repo}/commit/${source_commit}) |"
-  echo "| 🔨 **Compiler** | Android \`clang-r416183b\` |"
+  echo "| 🔨 **Compiler** | \`${android_clang_version:-clang-r416183b}\` |"
+  if [[ -n "${android_clang_commit}" ]]; then
+    echo "| 🧷 **Compiler Commit** | \`$(short_commit "${android_clang_commit}")\` |"
+  fi
   echo
   echo "---"
   echo

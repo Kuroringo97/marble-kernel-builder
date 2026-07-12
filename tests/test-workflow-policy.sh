@@ -26,6 +26,8 @@ required_core_patterns=(
   'git clone --filter=blob:none --no-checkout --depth=1'
   'sparse-checkout set "${ANDROID_CLANG_VERSION}"'
   'ANDROID_CLANG_REF_COMMIT'
+  'LLVM_22_1_8_SHA256'
+  'inputs.toolchain'
   'compression-level: 0'
   'retention-days: 30'
   'marble-builder-ccache-v2-'
@@ -107,6 +109,43 @@ grep -Fq 'concurrency:' "${wrapper}" || {
   echo "FAIL: ${wrapper} does not guard duplicate workflow runs with concurrency" >&2
   exit 1
 }
+
+grep -Fq 'toolchain:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the toolchain selector" >&2
+  exit 1
+}
+
+grep -Fq 'default: android-r416183b' "${matrix}" || {
+  echo "FAIL: matrix workflow must keep Android r416183b as the default toolchain" >&2
+  exit 1
+}
+
+grep -Fq 'llvm-22.1.8' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose LLVM 22.1.8 as an experimental option" >&2
+  exit 1
+}
+
+grep -Fq 'toolchain: ${{ inputs.toolchain }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass the selected toolchain to build-core" >&2
+  exit 1
+}
+
+required_toolchain_patterns=(
+  'Restore LLVM 22.1.8'
+  'Fetch LLVM 22.1.8'
+  'sha256sum -c -'
+  'LLVM_22_1_8_URL'
+  'LLVM_22_1_8_SHA256'
+  'ACTIVE_TOOLCHAIN_VERSION'
+  'ACTIVE_TOOLCHAIN_ID'
+  'ACTIVE_TOOLCHAIN_DIGEST'
+)
+for pattern in "${required_toolchain_patterns[@]}"; do
+  grep -Fq -- "${pattern}" "${core}" || {
+    echo "FAIL: build-core missing toolchain pattern: ${pattern}" >&2
+    exit 1
+  }
+done
 
 grep -Fq 'create_draft_release:' "${matrix}" || {
   echo "FAIL: matrix workflow does not expose the draft release input" >&2

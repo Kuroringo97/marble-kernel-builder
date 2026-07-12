@@ -13,9 +13,15 @@ if [[ ! -d "${MATRIX_ARTIFACTS_DIR}" ]]; then
   exit 1
 fi
 
-mapfile -t artifact_dirs < <(
+artifact_dirs=()
+if [[ -f "${MATRIX_ARTIFACTS_DIR}/build-info.txt" && -f "${MATRIX_ARTIFACTS_DIR}/zip-name.env" ]]; then
+  artifact_dirs+=("${MATRIX_ARTIFACTS_DIR}")
+fi
+
+mapfile -t nested_artifact_dirs < <(
   find "${MATRIX_ARTIFACTS_DIR}" -mindepth 1 -maxdepth 1 -type d | sort
 )
+artifact_dirs+=("${nested_artifact_dirs[@]}")
 
 valid_dirs=()
 for artifact_dir in "${artifact_dirs[@]}"; do
@@ -114,7 +120,7 @@ build_badge_url="https://img.shields.io/badge/Matrix-Passing-2088FF?style=for-th
   echo "| 🧬 **Kernel Base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build Scope** | \`${BUILD_SCOPE}\` |"
   echo "| 📦 **Source** | [\`${source_ref} @ $(short_commit "${source_commit}")\`](https://github.com/${source_repo}/commit/${source_commit}) |"
-  echo "| 🔨 **Compiler** | Android \`${android_clang_version:-clang-r416183b}\` |"
+  echo "| 🔨 **Compiler** | \`${android_clang_version:-clang-r416183b}\` |"
   if [[ -n "${android_clang_commit}" ]]; then
     echo "| 🧷 **Compiler Commit** | \`$(short_commit "${android_clang_commit}")\` |"
   fi
