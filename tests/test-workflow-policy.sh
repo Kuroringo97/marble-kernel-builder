@@ -30,7 +30,10 @@ required_core_patterns=(
   'inputs.toolchain'
   'compression-level: 0'
   'retention-days: 30'
-  'marble-builder-ccache-v2-'
+  'marble-builder-ccache-v4-'
+  'Restore ThinLTO cache'
+  'Save ThinLTO cache'
+  'marble-builder-thinlto-v1-'
   'runner_image_version='
   'ccache_hit='
   'publish_step_summary'
@@ -52,13 +55,48 @@ if grep -Eq 'debug_artifacts|marble-debug-|Upload debug artifacts|retention-days
   exit 1
 fi
 
+# Object caches: save on failure too (!cancelled), not success-only — keeps partial compile work.
+grep -Fq '!cancelled()' "${core}" || {
+  echo "FAIL: ccache/ThinLTO save must allow failed builds via !cancelled()" >&2
+  exit 1
+}
+if grep -E 'Save ccache|Save ThinLTO cache' -A6 "${core}" | grep -q 'success()'; then
+  echo "FAIL: object-cache save must not be success()-only (partial compiles should persist)" >&2
+  exit 1
+fi
+grep -Fq 'always()' "${core}" || {
+  echo "FAIL: object-cache save steps should use always() so they run after a failed build" >&2
+  exit 1
+}
+
 grep -Fq 'CCACHE_COMPILERCHECK=content' scripts/build-kernel.sh || {
   echo "FAIL: ccache compiler validation is not content-based" >&2
   exit 1
 }
 
-grep -Fq 'ccache -M 2G' scripts/build-kernel.sh || {
-  echo "FAIL: ccache maximum is not 2 GiB" >&2
+grep -Fq 'ccache -M 4G' scripts/build-kernel.sh || {
+  echo "FAIL: ccache maximum is not 4 GiB" >&2
+  exit 1
+}
+
+grep -Fq 'compression=true' scripts/build-kernel.sh || {
+  echo "FAIL: ccache compression must stay enabled" >&2
+  exit 1
+}
+
+grep -Fq 'compression_level=6' scripts/build-kernel.sh || {
+  echo "FAIL: ccache compression_level=6 should be configured when supported" >&2
+  exit 1
+}
+
+grep -Fq 'lto${lto_mode}' .github/workflows/build-core.yml || \
+  grep -Fq -- '-lto' .github/workflows/build-core.yml || {
+  echo "FAIL: ccache key must include LTO mode in its identity" >&2
+  exit 1
+}
+
+grep -Fq 'echo "lto=${LTO:-thin}"' .github/workflows/build-core.yml || {
+  echo "FAIL: build-info.txt must record lto mode" >&2
   exit 1
 }
 
@@ -110,18 +148,65 @@ grep -Fq 'concurrency:' "${wrapper}" || {
   exit 1
 }
 
+grep -Fq 'kernel_source:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the kernel_source dropdown" >&2
+  exit 1
+}
+
+for preset in melt lineageos evolution-x pablo; do
+  grep -Fq -- "- ${preset}" "${matrix}" || {
+    echo "FAIL: matrix workflow missing kernel_source option: ${preset}" >&2
+    exit 1
+  }
+done
+
+grep -Fq 'kernel_source: ${{ inputs.kernel_source }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass kernel_source to build-core" >&2
+  exit 1
+}
+
+grep -Fq 'scripts/resolve-kernel-source.sh' "${core}" || {
+  echo "FAIL: build-core does not resolve kernel source presets" >&2
+  exit 1
+}
+
+[[ -f config/kernel-sources.json ]] || {
+  echo "FAIL: config/kernel-sources.json is missing" >&2
+  exit 1
+}
+
 grep -Fq 'toolchain:' "${matrix}" || {
   echo "FAIL: matrix workflow does not expose the toolchain selector" >&2
   exit 1
 }
 
-grep -Fq 'default: android-r416183b' "${matrix}" || {
-  echo "FAIL: matrix workflow must keep Android r416183b as the default toolchain" >&2
+grep -Fq 'default: auto' "${matrix}" || {
+  echo "FAIL: matrix workflow must default toolchain to auto" >&2
+  exit 1
+}
+
+grep -Fq -- '- auto' "${matrix}" || {
+  echo "FAIL: matrix workflow must expose auto toolchain option" >&2
   exit 1
 }
 
 grep -Fq 'llvm-22.1.8' "${matrix}" || {
-  echo "FAIL: matrix workflow does not expose LLVM 22.1.8 as an experimental option" >&2
+  echo "FAIL: matrix workflow does not expose LLVM 22.1.8 as an option" >&2
+  exit 1
+}
+
+grep -Fq 'inputs.toolchain' "${wrapper}" || {
+  echo "FAIL: matrix concurrency or wiring must reference inputs.toolchain" >&2
+  exit 1
+}
+
+grep -Fq 'Resolve toolchain' "${core}" || {
+  echo "FAIL: build-core must resolve toolchain=auto after kernel preset" >&2
+  exit 1
+}
+
+grep -Fq 'resolve-toolchain.sh' "${core}" || {
+  echo "FAIL: build-core must call scripts/resolve-toolchain.sh" >&2
   exit 1
 }
 
@@ -129,6 +214,43 @@ grep -Fq 'toolchain: ${{ inputs.toolchain }}' "${matrix}" || {
   echo "FAIL: matrix workflow does not pass the selected toolchain to build-core" >&2
   exit 1
 }
+
+grep -Fq 'lto:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the lto input" >&2
+  exit 1
+}
+
+grep -Fq 'default: thin' "${matrix}" || {
+  echo "FAIL: matrix workflow must default lto to thin" >&2
+  exit 1
+}
+
+for lto_opt in none thin full; do
+  grep -Fq -- "- ${lto_opt}" "${matrix}" || {
+    echo "FAIL: matrix workflow missing lto option: ${lto_opt}" >&2
+    exit 1
+  }
+done
+
+grep -Fq 'lto: ${{ inputs.lto }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass lto to build-core" >&2
+  exit 1
+}
+
+grep -Fq 'inputs.lto' "${wrapper}" || {
+  echo "FAIL: matrix concurrency or wiring must reference inputs.lto" >&2
+  exit 1
+}
+
+if ! grep -Eq 'LTO: \$\{\{ inputs\.lto \}\}|inputs\.lto' "${core}"; then
+  echo "FAIL: build-core must wire LTO env or inputs.lto" >&2
+  exit 1
+fi
+
+if ! grep -Eq 'Setup swap|swap-size-gb' "${core}"; then
+  echo "FAIL: build-core must set up swap for LTO builds" >&2
+  exit 1
+fi
 
 required_toolchain_patterns=(
   'Restore LLVM 22.1.8'
@@ -196,8 +318,38 @@ grep -Fq 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' \
   exit 1
 }
 
-grep -Fq 'for test_script in tests/test-*.sh' .github/workflows/build-matrix.yml || {
-  echo "FAIL: matrix policy tests are not run before fan-out" >&2
+# Matrix setup runs a fast policy subset; full suite stays in preflight.
+required_matrix_setup_tests=(
+  'tests/test-workflow-policy.sh'
+  'tests/test-lto-policy.sh'
+  'tests/test-manager-policy.sh'
+  'tests/test-matrix-generator.sh'
+  'tests/test-susfs-presets.sh'
+)
+for setup_test in "${required_matrix_setup_tests[@]}"; do
+  grep -Fq "${setup_test}" .github/workflows/build-matrix.yml || {
+    echo "FAIL: matrix setup missing fast policy test: ${setup_test}" >&2
+    exit 1
+  }
+done
+
+if grep -Fq 'for test_script in tests/test-*.sh' .github/workflows/build-matrix.yml; then
+  echo "FAIL: matrix setup should run a fast subset, not all tests/test-*.sh" >&2
+  exit 1
+fi
+
+grep -Fq 'marble-matrix-summary-r${{ github.run_number }}' .github/workflows/build-matrix.yml || {
+  echo "FAIL: matrix workflow must upload combined summary artifact" >&2
+  exit 1
+}
+
+grep -Fq 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' .github/workflows/build-matrix.yml || {
+  echo "FAIL: matrix summary upload must use the pinned upload-artifact action" >&2
+  exit 1
+}
+
+grep -Fq 'matrix-summary-release.md' .github/workflows/build-matrix.yml || {
+  echo "FAIL: draft release must prefer matrix-summary-release.md (no CI cache section)" >&2
   exit 1
 }
 

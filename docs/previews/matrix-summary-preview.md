@@ -21,6 +21,7 @@
 <br/>
 
 [![Matrix](https://img.shields.io/badge/Matrix-3_managers_passed-4CAF50?logo=githubactions&logoColor=white)](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/1)
+[![LTO](https://img.shields.io/badge/LTO-thin-9C27B0)](#-matrix-configuration)
 [![SUSFS](https://img.shields.io/badge/SUSFS-v2.2.0-FF6D00?logo=gitlab&logoColor=white)](https://gitlab.com/simonpunk/susfs4ksu/-/commit/4003ecf2d01c6d13fa8edf6c4f2607365738dc3d)
 [![Device](https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350)](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)
 [![Scope](https://img.shields.io/badge/Scope-image--only-2088FF)](#-matrix-configuration)
@@ -56,12 +57,39 @@
 | | |
 |:---|:---|
 | 📱 **Device** | Poco F5 (`marblein`) · Redmi Note 12 Turbo (`marble`) |
+| 🟠 **ROM support** | **Official Xiaomi stock HyperOS only** |
+| 👤 **Kernel source** | **Melt** ([`melt`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble)) |
 | 🧬 **Kernel base** | `android12-5.10` |
 | 🛠️ **Build scope** | `image-only` |
+| 🏷️ **Package family** | `MELT` |
+| 🔗 **LTO** | `thin` |
+| 🧰 **Toolchain** | `android-r416183b` |
 | 📦 **Source** | [`melt-rebase @ 3673961`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble/commit/3673961d444b5e2b879be97a161241243d543bd2) |
 | 🔨 **Compiler** | `clang-r416183b` · [`6e3223f`](https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/6e3223f76384455acde43affde3df0ea9df66c0d) |
 | 🛡️ **SUSFS** | `v2.2.0` · `gki-android12-5.10` · [`4003ecf`](https://gitlab.com/simonpunk/susfs4ksu/-/commit/4003ecf2d01c6d13fa8edf6c4f2607365738dc3d) |
 | ✅ **Result** | **3 / 3** manager builds passed |
+
+---
+
+## 💾 Cache
+
+> CI diagnostics only — this section is **not** included in GitHub Release notes.
+
+| Manager | Actions ccache | Actions ThinLTO |
+|:---|:---:|:---:|
+| **KernelSU-Next** | `false` | `false` |
+| **SukiSU Ultra** | `false` | `false` |
+| **ReSukiSU** | `false` | `false` |
+
+### ccache -s — KernelSU-Next
+
+```text
+Cacheable calls:   2875 / 4422 (65.02%)
+  Hits:             105 / 2875 ( 3.65%)
+  Misses:          2770 / 2875 (96.35%)
+Local storage:
+  Cache size (GB):  0.5 /  6.0 ( 7.71%)
+```
 
 ---
 
@@ -138,12 +166,11 @@
 
 | Manager | File | Size | SHA-256 |
 |:---|:---|:---:|:---|
-| KernelSU-Next | `AK3_Marble-HyperOS_KSUNext-v3.2.0-code33201_SUSFS-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
-| SukiSU Ultra | `AK3_Marble-HyperOS_SukiSUUltra-v4.1.3-b88403d2-code40813_SUSFS-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
-| ReSukiSU | `AK3_Marble-HyperOS_ReSukiSU-v4.1.0-d0f59d06-code34989_SUSFS-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
+| KernelSU-Next | `AK3_marble_MELT_melt_ksunext-v3.2.0-code33201_susfs-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
+| SukiSU Ultra | `AK3_marble_MELT_melt_sukisu-v4.1.3-b88403d2-code40813_susfs-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
+| ReSukiSU | `AK3_marble_MELT_melt_resukisu-v4.1.0-d0f59d06-code34989_susfs-v2.2.0_r5.zip` | *sample* | `…` *(computed at build time)* |
 
-> In production, **Size** and **SHA-256** are filled from the real ZIPs.  
-> ZIP names may still include a packaging label (e.g. `HyperOS`) from the builder; that is a filename, not a ROM lock.
+> In production, **Size** and **SHA-256** are filled from the real ZIPs.
 
 ---
 
@@ -186,12 +213,12 @@
 
 | | |
 |:---|:---|
-| 🧑‍💻 **Kernel source** | Pzqqt · Xiaomi / device maintainers |
-| 📦 **AnyKernel3** | osm0sis |
-| 🔑 **KernelSU-Next** | KernelSU-Next team |
-| 🔑 **SukiSU Ultra** | SukiSU Ultra team |
-| 🔑 **ReSukiSU** | ReSukiSU team |
-| 🛡️ **SUSFS** | simonpunk and contributors |
+| 🧑‍💻 **Kernel source** | [Melt](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) (`mohdakil2426/android_kernel_xiaomi_marble`) |
+| 📦 **AnyKernel3** | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |
+| 🔑 **KernelSU-Next** | [`pershoot/KernelSU-Next`](https://github.com/pershoot/KernelSU-Next) |
+| 🔑 **SukiSU Ultra** | [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra) |
+| 🔑 **ReSukiSU** | [`ReSukiSU/ReSukiSU`](https://github.com/ReSukiSU/ReSukiSU) |
+| 🛡️ **SUSFS** | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |
 
 ---
 

@@ -102,6 +102,11 @@ susfs_commit="$(get_info "${first_info}" susfs_commit)"
 susfs_url="$(get_info "${first_info}" susfs_url)"
 android_clang_version="$(get_info "${first_info}" android_clang_version)"
 android_clang_commit="$(get_info "${first_info}" android_clang_commit)"
+toolchain_id="$(get_info "${first_info}" toolchain)"
+lto_mode="$(get_info "${first_info}" lto)"
+lto_mode="${lto_mode:-thin}"
+package_family="$(get_info "${first_info}" package_family)"
+enable_susfs_first="$(get_info "${first_info}" enable_susfs)"
 build_date="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 run_number="${SOURCE_RUN_NUMBER:-${GITHUB_RUN_NUMBER:-}}"
 susfs_display="${susfs_reported:-${susfs_version}}"
@@ -112,13 +117,14 @@ banner_ref="${GITHUB_SHA:-main}"
 banner_url="https://raw.githubusercontent.com/${builder_repo}/${banner_ref}/docs/assets/marble-banner.svg"
 
 manager_badge_url="https://img.shields.io/badge/Matrix-${manager_count}_managers_passed-4CAF50?logo=githubactions&logoColor=white"
-if [[ -n "${susfs_display}" ]]; then
+if [[ "${enable_susfs_first}" == "true" && -n "${susfs_display}" ]]; then
   susfs_badge_url="https://img.shields.io/badge/SUSFS-$(badge_encode "${susfs_display}")-FF6D00?logo=gitlab&logoColor=white"
 else
   susfs_badge_url="https://img.shields.io/badge/SUSFS-Disabled-757575?logo=gitlab&logoColor=white"
 fi
 device_badge_url="https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350"
 scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOPE}")-2088FF"
+lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C27B0"
 
 {
   echo '<div align="center">'
@@ -136,6 +142,7 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo "<br/>"
   echo
   echo "[![Matrix](${manager_badge_url})](${workflow_run})"
+  echo "[![LTO](${lto_badge_url})](${workflow_run})"
   echo "[![SUSFS](${susfs_badge_url})](${susfs_url:-https://gitlab.com/simonpunk/susfs4ksu})"
   echo "[![Device](${device_badge_url})](https://github.com/${source_repo})"
   echo "[![Scope](${scope_badge_url})](${workflow_run})"
@@ -170,21 +177,85 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo
   echo "| | |"
   echo "|:---|:---|"
+  kernel_source_id="$(get_info "${first_info}" kernel_source)"
+  kernel_source_author="$(get_info "${first_info}" kernel_source_author)"
+  rom_support="$(get_info "${first_info}" rom_support)"
   echo "| 📱 **Device** | Poco F5 (\`marblein\`) · Redmi Note 12 Turbo (\`marble\`) |"
+  if [[ -n "${rom_support}" ]]; then
+    echo "| 🟠 **ROM support** | **${rom_support}** |"
+  fi
+  if [[ -n "${kernel_source_author}" || -n "${kernel_source_id}" ]]; then
+    _ks_label="${kernel_source_author:-${kernel_source_id}}"
+    _ks_id="${kernel_source_id:-unknown}"
+    if [[ -n "${source_repo}" ]]; then
+      echo "| 👤 **Kernel source** | **${_ks_label}** ([\`${_ks_id}\`](https://github.com/${source_repo})) |"
+    else
+      echo "| 👤 **Kernel source** | **${_ks_label}** (\`${_ks_id}\`) |"
+    fi
+  fi
   echo "| 🧬 **Kernel base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build scope** | \`${BUILD_SCOPE}\` |"
+  if [[ -n "${package_family}" ]]; then
+    echo "| 🏷️ **Package family** | \`${package_family}\` |"
+  fi
+  echo "| 🔗 **LTO** | \`${lto_mode}\` |"
+  if [[ -n "${toolchain_id}" ]]; then
+    echo "| 🧰 **Toolchain** | \`${toolchain_id}\` |"
+  fi
   echo "| 📦 **Source** | [\`${source_ref} @ $(short_commit "${source_commit}")\`](https://github.com/${source_repo}/commit/${source_commit}) |"
   echo "| 🔨 **Compiler** | \`${android_clang_version:-clang-r416183b}\` |"
   if [[ -n "${android_clang_commit}" ]]; then
     echo "| 🧷 **Compiler commit** | \`$(short_commit "${android_clang_commit}")\` |"
   fi
-  if [[ -n "${susfs_display}" ]]; then
+  if [[ "${enable_susfs_first}" == "true" && -n "${susfs_display}" ]]; then
     echo "| 🛡️ **SUSFS** | \`${susfs_display}\` · \`${susfs_branch}\` · [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
   else
     echo "| 🛡️ **SUSFS** | Disabled |"
   fi
   echo "| ✅ **Result** | **${manager_count} / ${manager_count}** manager builds passed |"
   echo
+  echo "---"
+  echo
+
+  # ── Cache (CI only — stripped from GitHub Release notes) ──────────────────
+  {
+    echo "${SUMMARY_CACHE_START}"
+    echo "## 💾 Cache"
+    echo
+    echo "> CI diagnostics only — this section is **not** included in GitHub Release notes."
+    echo
+    echo "| Manager | Actions ccache | Actions ThinLTO |"
+    echo "|:---|:---:|:---:|"
+    for artifact_dir in "${artifact_dirs[@]}"; do
+      build_info="${artifact_dir}/build-info.txt"
+      [[ -f "${build_info}" ]] || continue
+      m_name="$(get_info "${build_info}" manager)"
+      m_display="$(manager_display "${m_name}")"
+      m_ccache="$(get_info "${build_info}" ccache_hit)"
+      m_thin="$(get_info "${build_info}" thinlto_cache_hit)"
+      echo "| **${m_display}** | \`${m_ccache:-unknown}\` | \`${m_thin:-n/a}\` |"
+    done
+    echo
+    # Embed default ccache -s text (same as ccache-stats.txt artifact) per manager.
+    for artifact_dir in "${artifact_dirs[@]}"; do
+      build_info="${artifact_dir}/build-info.txt"
+      stats_file="${artifact_dir}/ccache-stats.txt"
+      [[ -f "${build_info}" ]] || continue
+      m_name="$(get_info "${build_info}" manager)"
+      m_display="$(manager_display "${m_name}")"
+      echo "### ccache -s — ${m_display}"
+      echo
+      echo '```text'
+      if [[ -f "${stats_file}" ]]; then
+        cat "${stats_file}"
+      else
+        echo "(ccache-stats.txt not available)"
+      fi
+      echo '```'
+      echo
+    done
+    echo "${SUMMARY_CACHE_END}"
+  }
   echo "---"
   echo
   echo "## 🔑 Managers"
@@ -277,15 +348,17 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
 
   echo "## 🛡️ SUSFS"
   echo
-  if [[ -n "${susfs_display}" ]]; then
+  if [[ "${enable_susfs_first}" == "true" ]]; then
     echo "| | |"
     echo "|:---|:---|"
     echo "| 🏷️ **Version** | \`${susfs_display}\` |"
     echo "| 🌿 **Kernel branch** | \`${susfs_branch}\` |"
-    echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    if [[ -n "${susfs_commit}" ]]; then
+      echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    fi
     echo "| 📦 **Userspace module** | [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module/releases) |"
     echo
-    echo "> After boot: install the SUSFS module matching this version, configure hiding rules, then reboot."
+    summary_susfs_module_note
   else
     echo "SUSFS is not enabled for this matrix."
   fi
@@ -330,6 +403,7 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo "- 📱 Poco F5 (\`marblein\`) or Redmi Note 12 Turbo (\`marble\`) only"
   echo "- 🧩 Kernel build that matches your **device + ROM**"
   echo "- 💾 Original \`boot.img\` from the same ROM/firmware stored **off-device**"
+  echo "- 🧵 Free runners: avoid many parallel LOS+LLVM jobs; prefer \`lto=thin\`"
   for artifact_dir in "${artifact_dirs[@]}"; do
     build_info="${artifact_dir}/build-info.txt"
     manager_name="$(get_info "${build_info}" manager)"
@@ -339,7 +413,7 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
       echo "- 📦 [${display} manager app](${app_url}) for the ${display} ZIP"
     fi
   done
-  if [[ -n "${susfs_display}" ]]; then
+  if [[ "${enable_susfs_first}" == "true" ]]; then
     echo "- 🛡️ [KSU SUSFS module](https://github.com/sidex15/susfs4ksu-module/releases) matching \`${susfs_display}\`"
   fi
   echo
@@ -355,8 +429,8 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo "3. Flash to the **active slot** with [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)"
   echo "4. AnyKernel3 will verify codename (\`marble\` / \`marblein\`) and **auto-back up** boot to \`/sdcard/marble-kernel-backup/\`"
   echo "5. Reboot · install / open the matching manager app"
-  if [[ -n "${susfs_display}" ]]; then
-    echo "6. If SUSFS is enabled: install the SUSFS module, configure rules, reboot"
+  if [[ "${enable_susfs_first}" == "true" ]]; then
+    echo "6. Install the SUSFS userspace module, configure rules, reboot"
   fi
   echo
   echo "</details>"
@@ -371,8 +445,14 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo
   echo "| | |"
   echo "|:---|:---|"
-  echo "| 🧑‍💻 **Kernel source** | Pzqqt · Xiaomi / device maintainers |"
-  echo "| 📦 **AnyKernel3** | osm0sis |"
+  # Dynamic from build-info — never hardcode a maintainer name.
+  credit_author="${kernel_source_author:-${kernel_source_id:-kernel}}"
+  if [[ -n "${source_repo}" ]]; then
+    echo "| 🧑‍💻 **Kernel source** | [${credit_author}](https://github.com/${source_repo}) (\`${source_repo}\`) |"
+  else
+    echo "| 🧑‍💻 **Kernel source** | ${credit_author} |"
+  fi
+  echo "| 📦 **AnyKernel3** | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |"
   seen_managers=""
   for artifact_dir in "${artifact_dirs[@]}"; do
     build_info="${artifact_dir}/build-info.txt"
@@ -383,10 +463,15 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
     esac
     seen_managers="${seen_managers} ${manager_name}"
     display="$(manager_display "${manager_name}")"
-    echo "| 🔑 **${display}** | ${display} team |"
+    m_repo="$(get_info "${build_info}" manager_repo)"
+    if [[ -n "${m_repo}" ]]; then
+      echo "| 🔑 **${display}** | [\`${m_repo}\`](https://github.com/${m_repo}) |"
+    else
+      echo "| 🔑 **${display}** | ${display} |"
+    fi
   done
-  if [[ -n "${susfs_display}" ]]; then
-    echo "| 🛡️ **SUSFS** | simonpunk and contributors |"
+  if [[ "${enable_susfs_first}" == "true" ]]; then
+    echo "| 🛡️ **SUSFS** | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |"
   fi
   echo
   echo "---"
@@ -397,7 +482,7 @@ scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOP
   echo
   echo "<br/>"
   echo
-  echo "\`marble\` · \`marblein\` · KernelSU family · SUSFS"
+  echo "\`marble\` · \`marblein\`"
   echo
   echo '</div>'
 } > "${MATRIX_SUMMARY}"

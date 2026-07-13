@@ -31,6 +31,12 @@ source_repo="$(get_info source_repo)"
 source_ref="$(get_info source_ref)"
 source_commit="$(get_info source_commit)"
 workflow_run="$(get_info workflow_run)"
+kernel_source_id="$(get_info kernel_source)"
+kernel_source_author="$(get_info kernel_source_author)"
+rom_support="$(get_info rom_support)"
+if [[ -z "${rom_support}" ]]; then
+  rom_support="Official Xiaomi stock ${SUPPORTED_ROM_LABEL} only"
+fi
 manager_name="$(get_info manager)"
 manager_repo="$(get_info manager_repo)"
 manager_ref="$(get_info manager_ref)"
@@ -50,6 +56,19 @@ susfs_reported="$(get_info susfs_reported_version)"
 susfs_url="$(get_info susfs_url)"
 android_clang_version="$(get_info android_clang_version)"
 android_clang_commit="$(get_info android_clang_commit)"
+lto_mode="$(get_info lto)"
+lto_mode="${lto_mode:-thin}"
+toolchain_id="$(get_info toolchain)"
+ccache_hit="$(get_info ccache_hit)"
+thinlto_cache_hit="$(get_info thinlto_cache_hit)"
+ccache_key="$(get_info ccache_key)"
+thinlto_cache_key="$(get_info thinlto_cache_key)"
+package_family="$(get_info package_family)"
+quality_label="$(get_info quality_label)"
+if [[ -z "${quality_label}" ]]; then
+  quality_label="$(summary_quality_label "${kernel_source_id:-melt}")"
+fi
+ccache_stats_line="$(summary_format_ccache_hits "${release_dir}/ccache-stats.txt")"
 zip_sha="$(sha256sum "${release_dir}/${zip_name}" | awk '{print $1}')"
 image_sha="$(sha256sum "${release_dir}/Image" | awk '{print $1}')"
 zip_size="$(du -h "${release_dir}/${zip_name}" | awk '{print $1}')"
@@ -127,15 +146,40 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "| | |"
   echo "|:---|:---|"
   echo "| 📱 **Device** | Poco F5 (\`marblein\`) · Redmi Note 12 Turbo (\`marble\`) |"
-  echo "| 🟠 **ROM Support** | **Official Xiaomi stock ${SUPPORTED_ROM_LABEL} only** |"
+  echo "| 🟠 **ROM Support** | **${rom_support}** |"
+  if [[ -n "${kernel_source_author}" || -n "${kernel_source_id}" ]]; then
+    _ks_label="${kernel_source_author:-${kernel_source_id}}"
+    _ks_id="${kernel_source_id:-unknown}"
+    if [[ -n "${source_repo}" ]]; then
+      echo "| 👤 **Kernel Source** | **${_ks_label}** ([\`${_ks_id}\`](https://github.com/${source_repo})) |"
+    else
+      echo "| 👤 **Kernel Source** | **${_ks_label}** (\`${_ks_id}\`) |"
+    fi
+  fi
   echo "| 🧬 **Kernel Base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build Scope** | \`${BUILD_SCOPE}\` |"
+  if [[ -n "${package_family}" ]]; then
+    echo "| 🏷️ **Package Family** | \`${package_family}\` |"
+  fi
+  echo "| 🧪 **Quality** | \`${quality_label}\` |"
+  echo "| 🔗 **LTO** | \`${lto_mode}\` |"
+  if [[ -n "${toolchain_id}" ]]; then
+    echo "| 🧰 **Toolchain** | \`${toolchain_id}\` |"
+  fi
   echo "| 📦 **Source** | [\`${source_ref} @ $(short_commit "${source_commit}")\`](https://github.com/${source_repo}/commit/${source_commit}) |"
   echo "| 🔨 **Compiler** | \`${android_clang_version:-clang-r416183b}\` |"
   if [[ -n "${android_clang_commit}" ]]; then
     echo "| 🧷 **Compiler Commit** | \`$(short_commit "${android_clang_commit}")\` |"
   fi
   echo
+  echo "---"
+  echo
+
+  # ── Cache (CI only — stripped from GitHub Release notes) ──────────────────
+  summary_emit_cache_section \
+    "${ccache_hit:-unknown}" \
+    "${thinlto_cache_hit:-n/a}" \
+    "${release_dir}/ccache-stats.txt"
   echo "---"
   echo
 
@@ -187,6 +231,8 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
     echo "| 🏷️ **Version** | \`${susfs_display}\` |"
     echo "| 🌿 **Kernel Branch** | \`${susfs_branch}\` |"
     echo "| 🔗 **Commit** | [\`$(short_commit "${susfs_commit}")\`](${susfs_url}) |"
+    echo
+    summary_susfs_module_note
   else
     echo "SUSFS is not enabled for this build."
   fi
@@ -203,7 +249,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo
   echo "- 🔓 Unlocked bootloader"
   echo "- 📱 Poco F5 (\`marblein\`) or Redmi Note 12 Turbo (\`marble\`) **only**"
-  echo "- 🟠 **Official Xiaomi stock ${SUPPORTED_ROM_LABEL} only** — MIUI, AOSP, and custom ROMs are unsupported"
+  echo "- 🟠 **${rom_support}** — flash only on a matching ROM family"
   echo "- 💾 Stock \`boot.img\` from the **same ROM/firmware** stored safely outside the device"
   if [[ "${manager_name}" != "none" && -n "${manager_app_url}" ]]; then
     echo "- 📦 [${manager_display} manager app](${manager_app_url})"
@@ -260,18 +306,25 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "---"
   echo
 
-  # ── Credits ──────────────────────────────────────────────────────────────
+  # ── Credits (dynamic from build-info — no hardcoded maintainer names) ────
   echo "## 🙏 Credits"
   echo
   echo "| | |"
   echo "|:---|:---|"
-  echo "| 🧑‍💻 **Kernel Source** | Pzqqt · Xiaomi/Poco kernel maintainers |"
-  echo "| 📦 **AnyKernel3** | osm0sis |"
-  if [[ "${manager_name}" != "none" ]]; then
-    echo "| 🔑 **${manager_display}** | ${manager_display} team |"
+  credit_author="${kernel_source_author:-${kernel_source_id:-kernel}}"
+  if [[ -n "${source_repo}" ]]; then
+    echo "| 🧑‍💻 **Kernel source** | [${credit_author}](https://github.com/${source_repo}) (\`${source_repo}\`) |"
+  else
+    echo "| 🧑‍💻 **Kernel source** | ${credit_author} |"
+  fi
+  echo "| 📦 **AnyKernel3** | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |"
+  if [[ "${manager_name}" != "none" && -n "${manager_repo}" ]]; then
+    echo "| 🔑 **${manager_display}** | [\`${manager_repo}\`](https://github.com/${manager_repo}) |"
+  elif [[ "${manager_name}" != "none" ]]; then
+    echo "| 🔑 **${manager_display}** | ${manager_display} |"
   fi
   if [[ "${ENABLE_SUSFS}" == "true" ]]; then
-    echo "| 🛡️ **SUSFS** | simonpunk and contributors |"
+    echo "| 🛡️ **SUSFS** | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |"
   fi
   echo
   echo "---"

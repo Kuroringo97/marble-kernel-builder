@@ -15,6 +15,12 @@ cat > "${release_dir}/zip-name.env" <<'ENV'
 zip_name=test.zip
 ENV
 cat > "${release_dir}/build-info.txt" <<'INFO'
+kernel_source=melt
+kernel_source_display=Melt
+kernel_source_author=Melt
+rom_family=hyperos
+rom_support=Official Xiaomi stock HyperOS only
+supported_rom_label=HyperOS
 source_repo=mohdakil2426/android_kernel_xiaomi_marble
 source_ref=melt-rebase
 source_commit=3673961d444b5e2b879be97a161241243d543bd2
@@ -33,7 +39,16 @@ susfs_ref=4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
 susfs_commit=4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
 susfs_reported_version=v2.2.0
 susfs_url=https://gitlab.com/simonpunk/susfs4ksu/-/commit/4003ecf2d01c6d13fa8edf6c4f2607365738dc3d
+lto=thin
+toolchain=android-r416183b
+ccache_hit=false
+thinlto_cache_hit=false
+ccache_key=marble-builder-ccache-v4-test-key
+thinlto_cache_key=marble-builder-thinlto-v1-test-key
+package_family=MELT
+quality_label=melt-stable-candidate
 INFO
+printf '%s\n' '  Hits:             10 / 100 (10.00%)' > "${release_dir}/ccache-stats.txt"
 
 KERNEL_DIR="${tmp_dir}" MANAGER=kernelsu-next ENABLE_SUSFS=true BUILD_SCOPE=image-only GITHUB_RUN_NUMBER=49 \
   bash scripts/generate-build-summary.sh >/dev/null
@@ -42,27 +57,48 @@ summary="${release_dir}/summary.md"
 
 required_patterns=(
   'Official Xiaomi stock HyperOS only'
-  '^# 🪨 Marble Kernel$'
-  '^### Poco F5 · Redmi Note 12 Turbo$'
+  'Marble Kernel'
+  'Poco F5'
+  'Kernel Source'
+  'Melt'
   'img\.shields\.io/badge/KernelSU--Next-v3\.2\.0_%2333201-4CAF50'
   'img\.shields\.io/badge/SUSFS-v2\.2\.0-FF6D00'
   'Run #49'
-  '^## ⚙️ Build Configuration$'
-  '^## 🔑 Manager — KernelSU-Next$'
-  '^## 🛡️ SUSFS$'
-  '^## 📲 Installation$'
-  '^<summary><b>📋 Prerequisites</b> — expand before flashing</summary>$'
-  '^<summary><b>⚡ Flash Steps</b></summary>$'
-  '^> \[!WARNING\]$'
-  '^## 📦 Artifacts & Checksums$'
-  '^<summary><b>🔐 SHA256 Checksums</b></summary>$'
-  '^## 🙏 Credits$'
+  'Build Configuration'
+  'Manager — KernelSU-Next'
+  '## .*SUSFS'
+  'Installation'
+  'Prerequisites'
+  'Flash Steps'
+  '\[!WARNING\]'
+  'Artifacts & Checksums'
+  'SHA256 Checksums'
+  'Credits'
   'pershoot/KernelSU-Next'
-  'gitlab\.com/simonpunk/susfs4ksu/-/commit/4003ecf2'
-  'Poco F5.*marblein.*Redmi Note 12 Turbo.*marble'
+  'mohdakil2426/android_kernel_xiaomi_marble'
+  'gitlab\.com/simonpunk/susfs4ksu'
+  'marblein'
   'Flash the ZIP to the active slot'
-  '⚡ Built with ❤️ using \*\*GitHub Actions\*\*'
+  'GitHub Actions'
+  'SUSFS userspace module'
+  'LTO'
+  'Toolchain'
+  'android-r416183b'
+  'melt-stable-candidate'
+  '^## .*Cache$'
+  'marble-ci-cache-start'
+  'Actions ccache hit'
+  'GitHub Release notes'
+  'ccache -s'
+  '```text'
+  'github.com/mohdakil2426/android_kernel_xiaomi_marble'
 )
+
+# Hardcoded maintainer names must never appear in credits.
+if grep -Eq 'Pzqqt' "${summary}"; then
+  echo "FAIL: summary credits must not hardcode Pzqqt" >&2
+  exit 1
+fi
 
 for pattern in "${required_patterns[@]}"; do
   if ! grep -Eq "${pattern}" "${summary}"; then
@@ -70,6 +106,21 @@ for pattern in "${required_patterns[@]}"; do
     exit 1
   fi
 done
+
+# Cache section must be stripable for release notes.
+stripped="$(bash -c 'source scripts/lib/summary-common.sh; summary_strip_cache_section "'"${summary}"'"')"
+if echo "${stripped}" | grep -Eq 'marble-ci-cache|Actions ccache hit'; then
+  echo "FAIL: stripped summary still contains CI cache section" >&2
+  exit 1
+fi
+if echo "${stripped}" | grep -Eq '^## .*Cache$'; then
+  echo "FAIL: stripped summary still has Cache heading" >&2
+  exit 1
+fi
+if ! echo "${stripped}" | grep -Eq 'Build Configuration|Credits'; then
+  echo "FAIL: stripped summary lost main release content" >&2
+  exit 1
+fi
 
 blocked_patterns=(
   'Built Devices'

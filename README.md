@@ -49,8 +49,10 @@
 
 | Feature | Description |
 |--------|-------------|
+| 🧬 **Multi-kernel sources** | Dropdown: Melt (HyperOS), LineageOS, Evolution-X, Pablo (LOS-based) |
 | 🤖 **Multi-manager builds** | KernelSU, KernelSU-Next, SukiSU Ultra, ReSukiSU, or a clean no-root baseline |
 | 🛡️ **SUSFS integration** | Optional SUSFS (`v2.2.0` / `v2.1.0` / custom) for supported managers |
+| 🔗 **Selectable LTO** | `none` · `thin` (default) · `full` — free-runner hardened for thin |
 | ⚙️ **GitHub Actions CI** | One-click matrix builds — single manager or parallel multi-manager |
 | 📦 **AnyKernel3 packages** | Flashable ZIPs with device checks and automatic boot backup |
 | 🔒 **Pinned & verified** | Commit-pinned toolchains, allowlisted managers, policy tests, ZIP attestations |
@@ -71,17 +73,62 @@
 
 ## 🏗️ How This Repo Works
 
-Marble uses a **two-repo model** so the kernel source fork stays clean forever:
+Marble uses a **builder + selectable kernel source** model so upstream trees stay clean:
 
 | Repository | Role |
 |------------|------|
-| [`mohdakil2426/android_kernel_xiaomi_marble`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) | Clean kernel source fork — **never patched in-tree** |
 | [`mohdakil2426/marble-kernel-builder`](https://github.com/mohdakil2426/marble-kernel-builder) | This repo — workflows, scripts, config, packaging |
+| Selected kernel source (dropdown) | Clean upstream / fork checked out only in CI — **never patched in-tree** |
+
+### Kernel source presets (workflow dropdown)
+
+Named after the project / author. Pick one in **Build Marble Kernel**:
+
+| Dropdown | Author / project | Source repo | Default ref | ROM family |
+|----------|------------------|-------------|-------------|------------|
+| `melt` | Melt | [`mohdakil2426/android_kernel_xiaomi_marble`](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) | `melt-rebase` | Stock **HyperOS** |
+| `lineageos` | LineageOS | [`LineageOS/android_kernel_xiaomi_sm8450`](https://github.com/LineageOS/android_kernel_xiaomi_sm8450) | `lineage-23.2` | **LOS-based** custom ROMs only |
+| `evolution-x` | Evolution-X | [`Evolution-X-Devices/kernel_xiaomi_sm8450`](https://github.com/Evolution-X-Devices/kernel_xiaomi_sm8450) | `cnb` | **LOS-based** custom ROMs only |
+| `pablo` | Pablo | [`aosp-pablo/android_kernel_xiaomi_sm8450`](https://github.com/aosp-pablo/android_kernel_xiaomi_sm8450) | `16` | **LOS-based** custom ROMs only |
+
+- **HyperOS (`melt`)** uses `marble_defconfig` and Android `clang-r416183b` via `toolchain=auto`.
+- **LOS-family kernels** merge `gki_defconfig` + vendor GKI fragments; `toolchain=auto` selects **`llvm-22.1.8`** (armv9). Prefer **`lto=thin`** on free runners.
+- Optional **`source_ref`** overrides the preset default branch/tag/commit.
+
+### Recommended workflow inputs
+
+| Preset | toolchain | lto | Notes |
+|--------|-----------|-----|-------|
+| `melt` | `auto` → `android-r416183b` | `thin` | HyperOS-oriented |
+| `lineageos` | `auto` → `llvm-22.1.8` | `thin` | Required for armv9 |
+| `evolution-x` | `auto` → `llvm-22.1.8` | `thin` | LOS-family |
+| `pablo` | `auto` → `llvm-22.1.8` | `thin` | LOS-family |
+
+**Free runners:** avoid many parallel LOS+LLVM jobs; prefer 1–2 heavy builds at a time. Prefer `lto=thin`, not `full`.
+
+**After SUSFS kernels:** install a matching SUSFS userspace module (e.g. sidex15) in addition to the manager app.
+
+### Flash ZIP naming
+
+```text
+AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+```
+
+| FAMILY | Sources |
+|--------|---------|
+| `MELT` | `melt` |
+| `LOS` | `lineageos`, `evolution-x`, `pablo` |
+
+LTO and toolchain are **not** in the filename (see flash banner + `build-info.*`).
+
+**Summaries:** build/matrix summaries include a **Cache** section (Actions ccache/ThinLTO hits + raw `ccache -s`). That block is for CI/artifacts only and is **removed** from draft GitHub Release notes.
 
 **CI flow (simplified):**
 
 ```text
-Checkout builder + kernel source
+Checkout builder → resolve kernel preset
+        ↓
+Checkout selected kernel source
         ↓
 Apply manager + SUSFS (temp workspace only)
         ↓
@@ -92,7 +139,9 @@ Package AnyKernel3 ZIP + metadata
 Upload artifacts  ·  optional draft release
 ```
 
-Patches never land on the source fork — only inside the temporary CI workspace.
+Patches never land on the source repos — only inside the temporary CI workspace.
+
+**Deep dive:** full CI topology, cache keys, LTO, packaging, and extensibility → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -139,9 +188,10 @@ Do **not** enable SUSFS with `none` or `kernelsu`.
 ### Quick start — build
 
 1. Open **[Actions → Build Marble Kernel → Run workflow](https://github.com/mohdakil2426/marble-kernel-builder/actions)**
-2. Select manager checkbox(es)
-3. Set SUSFS / source / toolchain / scope as needed
-4. Run · download artifacts when green
+2. Choose **kernel source** (`melt` / `lineageos` / `evolution-x` / `pablo`)
+3. Select manager checkbox(es)
+4. Set **lto** (default `thin`), SUSFS, optional `source_ref`, **toolchain** (LOS → `llvm-22.1.8`), scope
+5. Run · download artifacts when green
 
 ### Draft release
 
@@ -169,11 +219,12 @@ Do **not** enable SUSFS with `none` or `kernelsu`.
 | `enable_susfs` | `false` | Enable SUSFS for managers that support it |
 | `susfs_version` | `v2.2.0` | `v2.2.0` · `v2.1.0` · `custom` |
 | `susfs_ref` | *(empty)* | Branch/tag/commit — only with `custom` |
-| `source_repo` | `mohdakil2426/android_kernel_xiaomi_marble` | Kernel source repository |
-| `source_ref` | `melt-rebase` | Branch, tag, or commit |
+| `kernel_source` | `melt` | Dropdown: `melt` · `lineageos` · `evolution-x` · `pablo` |
+| `source_ref` | *(empty)* | Optional branch/tag/commit override (preset default if empty) |
 | `build_scope` | `image-only` | `image-only` or `full` |
 | `toolchain` | `android-r416183b` | `android-r416183b` (default) or experimental `llvm-22.1.8` |
-| `enable_ccache` | `true` | ccache for compatible rebuilds |
+| `lto` | `thin` | Clang LTO mode: `none` · `thin` (default, free-runner safe) · `full` (needs more RAM) |
+| `enable_ccache` | `true` | ccache (4 GiB Melt / 6 GiB LLVM) + ThinLTO Actions cache when `lto=thin` |
 | `create_draft_release` | `false` | Create one ZIP-only draft release after a full success |
 
 </details>
@@ -186,11 +237,11 @@ Run in order. Verify each step before the next:
 
 | Step | What to build |
 |:----:|---------------|
-| **1** | `build_none` · SUSFS **off** · `image-only` |
-| **2** | `build_none` · `full` scope *(only if needed)* |
-| **3** | One root manager at a time · SUSFS **off** |
-| **4** | `kernelsu-next` / `sukisu-ultra` / `resukisu` · SUSFS **on** |
-| **5** | Combine managers in one matrix · optional `create_draft_release` |
+| **1** | `kernel_source=melt` · `build_none` · `lto=none` or `thin` · `image-only` |
+| **2** | Same with one manager · SUSFS **off** |
+| **3** | `kernelsu-next` / `sukisu-ultra` / `resukisu` · SUSFS **on** (boot-proven on Melt) |
+| **4** | LOS presets · `toolchain=llvm-22.1.8` · `lto=thin` · start with `build_none` |
+| **5** | Multi-manager matrix · optional `create_draft_release` |
 
 ---
 
@@ -200,36 +251,38 @@ Run in order. Verify each step before the next:
 
 ```text
 marble-flash-<label>-<scope>-r<run>/
-├─ AK3_Marble-HyperOS_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip
-├─ AK3_Marble-HyperOS_<Manager>-<version>-code<code>_<SUSFS>_r<run>.zip.sha256
+├─ AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+├─ *.zip.sha256
 ├─ build-info.txt       # resolved refs + workflow metadata
 ├─ build-info.json      # structured metadata for tooling
-├─ summary.md           # build summary (also used as release notes)
+├─ summary.md           # CI/artifact summary (includes Cache section)
 ├─ zip-audit.txt        # structure audit results
-└─ ccache-stats.txt
+└─ ccache-stats.txt     # raw ccache -s (also embedded in summary Cache)
 ```
 
 ### Name examples
 
 ```text
-AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
-AK3_Marble-HyperOS_SukiSUUltra-v4.1.3-code40813_SUSFS-v2.2.0_r9.zip
-AK3_Marble-HyperOS_ReSukiSU-v4.1.0-code34990_SUSFS-v2.2.0_r9.zip
-AK3_Marble-HyperOS_KernelSU-v1.0.3-code12345_NoSUSFS_r9.zip
-AK3_Marble-HyperOS_NoRoot_NoSUSFS_r9.zip
+AK3_marble_MELT_melt_ksunext-v3.2.0-code33203_susfs-v2.2.0_r121.zip
+AK3_marble_LOS_lineageos_ksunext-v3.2.0-code33203_susfs-v2.2.0_r121.zip
+AK3_marble_LOS_evolution-x_sukisu-v4.1.3-code40813_susfs-v2.2.0_r122.zip
+AK3_marble_LOS_pablo_resukisu-v4.1.0-code34990_r123.zip
+AK3_marble_MELT_melt_noroot_r124.zip
 ```
 
 > Versioning prefers manager **build version + numeric code**.  
-> Fallback: resolved tag → 7-character manager commit.
+> Fallback: resolved tag → 7-character manager commit. SUSFS off omits the susfs segment.
 
 ---
 
 ## 🔒 Verified Defaults
 
-Last verified: **2026-06-23**
+Last updated: **2026-07-13** (branch `feature/los-kernel-source-presets`)
 
 | Component | Default / pin |
 |-----------|----------------|
+| **Kernel source** | `melt` · override via dropdown |
+| **LTO** | `thin` (`none` / `full` available) |
 | **SUSFS v2.2.0** | `gki-android12-5.10` · `4003ecf2…` |
 | **SUSFS v2.1.0** | `gki-android12-5.10` · `86114db0…` |
 | **KernelSU** | `tiann/KernelSU@main` · SUSFS disabled |
@@ -237,8 +290,8 @@ Last verified: **2026-06-23**
 | **KernelSU-Next + SUSFS** | `pershoot/KernelSU-Next@dev-susfs` |
 | **SukiSU Ultra** | `main` / `builtin` (SUSFS) |
 | **ReSukiSU** | `ReSukiSU/ReSukiSU@main` |
-| **Android Clang** | `clang-r416183b` · commit `6e3223f7…` |
-| **LLVM (experimental)** | `22.1.8` · SHA-256 verified |
+| **Android Clang** | `clang-r416183b` · commit `6e3223f7…` (Melt default) |
+| **LLVM 22.1.8** | Required for LOS armv9 · SHA-256 verified |
 | **AnyKernel3** | `dca9dc370838d919d56c1f59ec78b27a14a72c68` |
 
 Full pin table: [`docs/versions.md`](docs/versions.md)
@@ -252,25 +305,33 @@ Full pin table: [`docs/versions.md`](docs/versions.md)
 | **Actions** | Official actions pinned to immutable commits · Dependabot weekly |
 | **Android Clang** | Partial clone + sparse checkout · pinned commit verified before use |
 | **LLVM 22.1.8** | Official release only · SHA-256 check · separate cache |
-| **ccache** | 2 GiB cap · key by compiler / source / manager / SUSFS / scope |
+| **ccache** | 4 GiB (Melt) / 6 GiB (LLVM 22) · v4 multi-prefix keys · **LTO** in identity · save on fail (`!cancelled`) |
+| **ThinLTO cache** | Separate Actions cache (`~/.cache/thinlto`) when `lto=thin` · save on fail |
 | **Policy** | Matrix policy tests once before fan-out |
-| **Disk** | Cleanup only if free space &lt; 20 GiB |
-| **Artifacts** | Zero recompression · 30-day retention |
+| **Disk** | Strong SDK cleanup for LTO / low free space (Wild-style) |
+| **LTO free-runner** | 16 GiB swap when `lto≠none` · ThinLTO jobs=2 · LLVM JOBS=2 |
+| **Artifacts** | Zero recompression · 30-day retention · matrix summary + ccache-stats |
+| **Release notes** | Matrix summary **without** CI Cache section |
 | **Permissions** | Build jobs `contents: read` · write only on optional release job |
 | **Provenance** | OIDC-backed artifact attestations on final ZIPs |
-| **Concurrency** | Groups prevent stacked accidental dispatches |
+| **Concurrency** | Groups include `kernel_source` + `toolchain` + `lto` + susfs + scope |
 
 <details>
 <summary><b>Recent verification</b></summary>
 
 <br/>
 
-**2026-06-24** — commit `28f3830`
+**2026-07-13** — feature branch CI (`feature/los-kernel-source-presets`)
 
-- [Three-manager matrix](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28081895022)
-- [Protected promotion](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/28082454769)
+- Melt `none` + thin — [29211438837](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/29211438837)
+- LineageOS `none` + thin + llvm — [29212535876](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/29212535876)
+- LineageOS KSUNext+SUSFS + thin — [29214274071](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/29214274071)
 
-All ZIP checksums matched. Draft `marble-hyperos-r10` contained only clean flashable ZIPs.
+**2026-07-12** — multi-kernel smoke (`build_none`, `image-only`)
+
+- Melt / LineageOS / Evolution-X / Pablo — [29189567468](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/29189567468) … [29192972075](https://github.com/mohdakil2426/marble-kernel-builder/actions/runs/29192972075)
+
+**2026-06-22** — Melt device boot: KernelSU-Next / SukiSU Ultra / ReSukiSU + SUSFS v2.2.0 (r46–r48)
 
 </details>
 
@@ -308,17 +369,21 @@ On A/B devices, target the correct slot (or both if needed).
 
 | Resource | Link |
 |----------|------|
-| 📱 Kernel source fork | [mohdakil2426/android_kernel_xiaomi_marble](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) |
-| 🏗️ Upstream source | [Pzqqt/android_kernel_xiaomi_marble](https://github.com/Pzqqt/android_kernel_xiaomi_marble) |
+| 📱 Melt / HyperOS kernel | [mohdakil2426/android_kernel_xiaomi_marble](https://github.com/mohdakil2426/android_kernel_xiaomi_marble) |
+| 🟠 LineageOS SM8450 | [LineageOS/android_kernel_xiaomi_sm8450](https://github.com/LineageOS/android_kernel_xiaomi_sm8450) |
+| 🧬 Evolution-X SM8450 | [Evolution-X-Devices/kernel_xiaomi_sm8450](https://github.com/Evolution-X-Devices/kernel_xiaomi_sm8450) |
+| 🧩 Pablo SM8450 | [aosp-pablo/android_kernel_xiaomi_sm8450](https://github.com/aosp-pablo/android_kernel_xiaomi_sm8450) |
 | 🫙 AnyKernel3 | [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3) |
 | 🔐 KernelSU | [tiann/KernelSU](https://github.com/tiann/KernelSU) |
 | 🚀 KernelSU-Next | [KernelSU-Next/KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next) |
+| 🔀 KSUNext + SUSFS fork | [pershoot/KernelSU-Next](https://github.com/pershoot/KernelSU-Next) (`dev-susfs`) |
 | ✨ SukiSU Ultra | [SukiSU-Ultra/SukiSU-Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) |
 | 🔑 ReSukiSU | [ReSukiSU/ReSukiSU](https://github.com/ReSukiSU/ReSukiSU) |
 | 🛡️ SUSFS | [simonpunk/susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu) |
 | 📦 SUSFS module | [sidex15/susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) |
 | ⚡ Kernel Flasher | [fatalcoder524/KernelFlasher](https://github.com/fatalcoder524/KernelFlasher) |
 | 🔥 WildKernels (reference) | [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS) |
+| 📐 Architecture | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 
 ---
 
@@ -326,16 +391,17 @@ On A/B devices, target the correct slot (or both if needed).
 
 | Project / person | Contribution |
 |------------------|--------------|
-| **Pzqqt** | Upstream Marble kernel source & maintenance |
+| **Kernel source maintainers** | Melt, LineageOS, Evolution-X, Pablo trees used as clean presets |
 | **osm0sis** | AnyKernel3 flashing framework |
 | **tiann** | KernelSU |
 | **KernelSU-Next team** | KernelSU-Next |
+| **pershoot** | KernelSU-Next `dev-susfs` integration path |
 | **SukiSU Ultra team** | SukiSU Ultra |
 | **ReSukiSU team** | ReSukiSU |
 | **simonpunk** | susfs4ksu patches |
 | **sidex15** | SUSFS userspace module |
-| **WildKernels** | Reference CI & release patterns |
-| Xiaomi / MIUI maintainers | Device kernel base |
+| **WildKernels** | Reference CI, LTO/cache, and release patterns |
+| Device / ROM communities | HyperOS and LOS-family marble support |
 
 🙏 Special thanks to the open-source community.
 
@@ -344,7 +410,7 @@ On A/B devices, target the correct slot (or both if needed).
 ## 💬 Support
 
 - 🐛 [Open an issue](https://github.com/mohdakil2426/marble-kernel-builder/issues) for builder / CI problems  
-- 📖 See [`docs/`](docs/) for versions, manager matrix, and verification notes  
+- 📖 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/versions.md`](docs/versions.md), manager matrix, and verification notes  
 
 ---
 

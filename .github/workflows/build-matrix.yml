@@ -39,14 +39,19 @@ on:
         description: "SUSFS branch/tag/commit (only for custom version)"
         required: false
         default: ""
-      source_repo:
-        description: Kernel source repository
-        required: true
-        default: mohdakil2426/android_kernel_xiaomi_marble
+      kernel_source:
+        description: "Kernel source (named by project/author)"
+        type: choice
+        default: melt
+        options:
+          - melt
+          - lineageos
+          - evolution-x
+          - pablo
       source_ref:
-        description: Kernel source branch, tag, or commit
-        required: true
-        default: melt-rebase
+        description: "Override branch/tag/commit (empty = preset default)"
+        required: false
+        default: ""
       build_scope:
         description: Build target set
         type: choice
@@ -55,12 +60,21 @@ on:
           - image-only
           - full
       toolchain:
-        description: Compiler toolchain
+        description: "Compiler toolchain (auto = preset recommended, e.g. llvm-22 for LOS)"
         type: choice
-        default: android-r416183b
+        default: auto
         options:
+          - auto
           - android-r416183b
           - llvm-22.1.8
+      lto:
+        description: "Clang LTO mode (thin=default free-runner safe; full needs more RAM)"
+        type: choice
+        default: thin
+        options:
+          - none
+          - thin
+          - full
       enable_ccache:
         description: Enable ccache
         type: boolean
@@ -74,7 +88,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
   cancel-in-progress: false
 
 jobs:
@@ -93,7 +107,14 @@ jobs:
 
       - name: Validate builder policy
         run: |
-          for test_script in tests/test-*.sh; do
+          # Fast subset before fan-out; full suite remains in preflight.yml.
+          for test_script in \
+            tests/test-workflow-policy.sh \
+            tests/test-lto-policy.sh \
+            tests/test-manager-policy.sh \
+            tests/test-matrix-generator.sh \
+            tests/test-susfs-presets.sh
+          do
             env -u SOURCE_REPO -u SOURCE_REF -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
@@ -124,7 +145,7 @@ jobs:
       attestations: write
     uses: ./.github/workflows/build-core.yml
     with:
-      source_repo: ${{ inputs.source_repo }}
+      kernel_source: ${{ inputs.kernel_source }}
       source_ref: ${{ inputs.source_ref }}
       manager: ${{ matrix.manager }}
       manager_ref: ""
@@ -135,6 +156,7 @@ jobs:
       susfs_expected_version: ""
       build_scope: ${{ inputs.build_scope }}
       toolchain: ${{ inputs.toolchain }}
+      lto: ${{ inputs.lto }}
       enable_ccache: ${{ inputs.enable_ccache }}
       artifact_label: ${{ matrix.label }}
       run_policy_tests: false
@@ -170,6 +192,14 @@ jobs:
           bash scripts/generate-matrix-summary.sh
           cat matrix-summary.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload combined summary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: marble-matrix-summary-r${{ github.run_number }}
+          path: matrix-summary.md
+          retention-days: 30
+          if-no-files-found: error
+
   release:
     name: Create ZIP-only draft release
     needs: [build, aggregate-summary]
@@ -203,8 +233,19 @@ jobs:
         run: bash scripts/prepare-promoted-release.sh
 
       - name: Create ZIP-only draft release
+        env:
+          KERNEL_SOURCE: ${{ inputs.kernel_source }}
         run: |
-          tag="marble-hyperos-r${GITHUB_RUN_NUMBER}"
+          source_slug="${KERNEL_SOURCE:-melt}"
+          source_slug="$(printf '%s' "${source_slug}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+          [[ -n "${source_slug}" ]] || source_slug="melt"
+          display="${source_slug}"
+          if [[ -f config/kernel-sources.json ]]; then
+            display="$(KERNEL_SOURCE="${KERNEL_SOURCE}" python3 -c "import json,os; p=json.load(open('config/kernel-sources.json',encoding='utf-8')); print(p.get(os.environ.get('KERNEL_SOURCE',''),{}).get('display') or '')")"
+            [[ -n "${display}" ]] || display="${source_slug}"
+          fi
+
+          tag="marble-${source_slug}-r${GITHUB_RUN_NUMBER}"
           if gh release view "${tag}" >/dev/null 2>&1; then
             echo "::error::Release ${tag} already exists"
             exit 1
@@ -220,8 +261,14 @@ jobs:
             exit 1
           fi
 
+          # Prefer release notes without CI-only Cache section (written by prepare-promoted-release).
+          notes_file="matrix-summary-release.md"
+          if [[ ! -f "${notes_file}" ]]; then
+            notes_file="matrix-summary.md"
+          fi
+
           gh release create "${tag}" "${release_assets[@]}" \
             --draft \
             --target "${GITHUB_SHA}" \
-            --title "Marble Kernel · Stock HyperOS · r${GITHUB_RUN_NUMBER}" \
-            --notes-file matrix-summary.md
+            --title "Marble Kernel · ${display} · r${GITHUB_RUN_NUMBER}" \
+            --notes-file "${notes_file}"

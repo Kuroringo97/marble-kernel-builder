@@ -41,9 +41,9 @@ INFO
 
 valid_dir="${tmp_dir}/valid"
 make_artifact "${valid_dir}" marble-flash-kernelsu-next-susfs-image-only-r9 kernelsu-next \
-  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
+  AK3_marble_MELT_melt_ksunext-v3.2.0-code33203_susfs-v2.2.0_r9.zip
 make_artifact "${valid_dir}" marble-flash-resukisu-susfs-image-only-r9 resukisu \
-  AK3_Marble-HyperOS_ReSukiSU-v4.1.0-code34990_SUSFS-v2.2.0_r9.zip
+  AK3_marble_MELT_melt_resukisu-v4.1.0-code34990_susfs-v2.2.0_r9.zip
 
 MATRIX_ARTIFACTS_DIR="${valid_dir}" \
 MATRIX_SUMMARY="${tmp_dir}/matrix-summary.md" \
@@ -55,6 +55,14 @@ BUILD_SCOPE=image-only \
   echo "FAIL: combined release summary was not generated" >&2
   exit 1
 }
+[[ -s "${tmp_dir}/matrix-summary-release.md" ]] || {
+  echo "FAIL: release notes file without cache section was not generated" >&2
+  exit 1
+}
+if grep -Eq 'marble-ci-cache|^## .*Cache$' "${tmp_dir}/matrix-summary-release.md"; then
+  echo "FAIL: matrix-summary-release.md must not include CI cache section" >&2
+  exit 1
+fi
 [[ "$(wc -l < "${tmp_dir}/release-assets.txt")" -eq 2 ]] || {
   echo "FAIL: release manifest should contain two ZIPs" >&2
   exit 1
@@ -66,7 +74,7 @@ fi
 
 single_root="${tmp_dir}/valid-single-root"
 make_artifact "${tmp_dir}" valid-single-root kernelsu-next \
-  AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
+  AK3_marble_MELT_melt_ksunext-v3.2.0-code33203_susfs-v2.2.0_r9.zip
 
 MATRIX_ARTIFACTS_DIR="${single_root}" \
 MATRIX_SUMMARY="${tmp_dir}/single-matrix-summary.md" \
@@ -100,7 +108,7 @@ if MATRIX_ARTIFACTS_DIR="${missing_dir}" MATRIX_SUMMARY="${tmp_dir}/missing.md" 
 fi
 
 duplicate_dir="${tmp_dir}/duplicate"
-duplicate_name=AK3_Marble-HyperOS_KSUNext-v3.2.0-code33203_SUSFS-v2.2.0_r9.zip
+duplicate_name=AK3_marble_MELT_melt_ksunext-v3.2.0-code33203_susfs-v2.2.0_r9.zip
 make_artifact "${duplicate_dir}" marble-flash-one-image-only-r9 kernelsu-next "${duplicate_name}"
 make_artifact "${duplicate_dir}" marble-flash-two-image-only-r9 resukisu "${duplicate_name}"
 if MATRIX_ARTIFACTS_DIR="${duplicate_dir}" MATRIX_SUMMARY="${tmp_dir}/duplicate.md" \

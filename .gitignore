@@ -1,0 +1,9 @@
+# Local resolve/build scratch
+/release/
+
+.tools/
+
+# Local summary scratch from tests
+/matrix-summary.md
+/matrix-summary-release.md
+
