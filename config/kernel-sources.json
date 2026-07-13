@@ -63,7 +63,8 @@
       "vendor/waipio_GKI.config",
       "vendor/xiaomi_GKI.config",
       "vendor/marble_GKI.config",
-      "vendor/debugfs.config"
+      "vendor/debugfs.config",
+      "vendor/infinity.config"
     ],
     "recommended_toolchain": "llvm-22.1.8",
     "notes": "aosp-pablo SM8450 kernel (Marble Development). LOS-based custom ROMs only. Needs llvm-22.1.8 (armv9 flags)."
