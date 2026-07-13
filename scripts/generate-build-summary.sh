@@ -148,7 +148,13 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "| 📱 **Device** | Poco F5 (\`marblein\`) · Redmi Note 12 Turbo (\`marble\`) |"
   echo "| 🟠 **ROM Support** | **${rom_support}** |"
   if [[ -n "${kernel_source_author}" || -n "${kernel_source_id}" ]]; then
-    echo "| 👤 **Kernel Source** | **${kernel_source_author:-${kernel_source_id}}** (\`${kernel_source_id:-unknown}\`) |"
+    _ks_label="${kernel_source_author:-${kernel_source_id}}"
+    _ks_id="${kernel_source_id:-unknown}"
+    if [[ -n "${source_repo}" ]]; then
+      echo "| 👤 **Kernel Source** | **${_ks_label}** ([\`${_ks_id}\`](https://github.com/${source_repo})) |"
+    else
+      echo "| 👤 **Kernel Source** | **${_ks_label}** (\`${_ks_id}\`) |"
+    fi
   fi
   echo "| 🧬 **Kernel Base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build Scope** | \`${BUILD_SCOPE}\` |"
@@ -173,9 +179,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   summary_emit_cache_section \
     "${ccache_hit:-unknown}" \
     "${thinlto_cache_hit:-n/a}" \
-    "${ccache_stats_line}" \
-    "${ccache_key}" \
-    "${thinlto_cache_key}"
+    "${release_dir}/ccache-stats.txt"
   echo "---"
   echo
 

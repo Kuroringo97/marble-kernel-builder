@@ -2,7 +2,7 @@
 
 **Audience:** maintainers, contributors, and agents working on CI, packaging, or policy.  
 **Scope:** how `marble-kernel-builder` designs and runs builds — not how to flash a phone (see [README](../README.md)).  
-**Aligned with:** branch `feature/los-kernel-source-presets` (naming + pipeline improvements plan `2026-07-13-naming-banner-and-pipeline-improvements.md`, 2026-07-13).
+**Aligned with:** branch `feature/los-kernel-source-presets` @ tip including naming, toolchain=auto, CI-only Cache section, Wild-style manager version (`338cb9d`+).
 
 ---
 
@@ -731,13 +731,24 @@ When `create_draft_release=true` **and** build + aggregate both succeed:
 
 1. Download all flash artifacts for the run.  
 2. `prepare-promoted-release.sh` verifies structure + checksums; writes `release-assets.txt`.  
-3. `gh release create` **draft** with **only clean ZIPs** (checksums not attached as release assets).  
-4. Tag: `marble-<kernel_source>-r<run_number>`.  
-5. Title: `Marble Kernel · <Display> · rN`.  
-6. Notes: combined matrix summary.  
-7. Target: workflow SHA; fail if tag/release already exists.
+3. Regenerates matrix summary, then **strips the CI-only Cache section** → `matrix-summary-release.md`.  
+4. `gh release create` **draft** with **only clean ZIPs** (checksums not attached as release assets).  
+5. Tag: `marble-<kernel_source>-r<run_number>`.  
+6. Title: `Marble Kernel · <Display> · rN`.  
+7. Notes: **`matrix-summary-release.md`** (no Cache / ccache-stats block).  
+8. Target: workflow SHA; fail if tag/release already exists.
 
 No GitHub Environment deployment approval gate.
+
+### 12.5 Summaries
+
+| Document | Where | Cache section? |
+|----------|--------|----------------|
+| Per-build `summary.md` | Flash artifact | **Yes** — Actions hits + full `ccache -s` text |
+| `matrix-summary.md` | CI artifact / step summary | **Yes** — per-manager hits + `ccache -s` |
+| `matrix-summary-release.md` | Draft release notes only | **No** (stripped) |
+
+Kernel Source row links the preset id in parentheses to `https://github.com/<source_repo>`. Credits use dynamic author/repo (never hardcoded maintainers).
 
 ---
 
@@ -745,26 +756,29 @@ No GitHub Environment deployment approval gate.
 
 | File | Role |
 |------|------|
-| `release/resolved-refs.env` | Source-safe shell vars (manager/SUSFS commits, tags) |
-| `release/kernel-source.env` | Resolved preset outputs |
+| `release/resolved-refs.env` | Source-safe shell vars (manager/SUSFS commits, tags, version code) |
+| `release/kernel-source.env` | Resolved preset outputs + `PACKAGE_FAMILY` |
 | `build-info.txt` | Human-readable key=value for artifacts |
 | `build-info.json` | Structured metadata for tooling |
-| `summary.md` | Human release notes / step summary |
+| `summary.md` | Human CI/artifact summary (includes CI Cache section) |
 | `zip-audit.txt` | Structural audit of flash ZIP |
-| `ccache-stats.txt` | Cache hit statistics |
+| `ccache-stats.txt` | Raw `ccache -s` (also embedded in summary Cache section) |
 
 ### Notable `build-info` fields
 
 ```text
-kernel_source, kernel_source_display, rom_family, rom_support,
+kernel_source, kernel_source_display, rom_family, rom_support, package_family,
 source_repo, source_ref, source_commit,
-manager_*, susfs_*,
-toolchain, toolchain_digest, lto,
+manager_*, manager_version_code, manager_version_method, susfs_*,
+toolchain, toolchain_digest, lto, quality_label,
 ccache_key, ccache_hit, thinlto_cache_key, thinlto_cache_hit,
 workflow_run, runner_image_os / version, disk_available_before_build_gib
 ```
 
-Shared summary helpers live in `scripts/lib/summary-common.sh`. Matrix aggregation produces one combined document; ROM support lines come from build-info / preset (not HyperOS-only hardcode).
+**Manager version (Wild-style):** after apply, `read-manager-version.sh` computes  
+`code = git rev-list --count + BASE` (KSUN family BASE 10200/30000; KernelSU 30000), injects `DKSU_VERSION`/`KSU_VERSION` when present, seeds `manager_build_version_code`. Fallback: Makefile literal.
+
+Shared summary helpers live in `scripts/lib/summary-common.sh`.
 
 ---
 

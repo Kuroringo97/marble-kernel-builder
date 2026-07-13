@@ -101,6 +101,8 @@ required_patterns=(
   'marble-ci-cache-start'
   'Actions ccache'
   'GitHub Release notes'
+  'ccache -s'
+  'github.com/mohdakil2426/android_kernel_xiaomi_marble'
   '^## .*Managers$'
   '\| \*\*KernelSU-Next\*\* \| `v3\.2\.0` \| `33201` \|'
   '\| \*\*SukiSU Ultra\*\* \| `v4\.1\.3-b88403d2@HEAD` \| `40813` \|'

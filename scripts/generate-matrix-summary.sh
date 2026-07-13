@@ -185,7 +185,13 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
     echo "| 🟠 **ROM support** | **${rom_support}** |"
   fi
   if [[ -n "${kernel_source_author}" || -n "${kernel_source_id}" ]]; then
-    echo "| 👤 **Kernel source** | **${kernel_source_author:-${kernel_source_id}}** (\`${kernel_source_id:-unknown}\`) |"
+    _ks_label="${kernel_source_author:-${kernel_source_id}}"
+    _ks_id="${kernel_source_id:-unknown}"
+    if [[ -n "${source_repo}" ]]; then
+      echo "| 👤 **Kernel source** | **${_ks_label}** ([\`${_ks_id}\`](https://github.com/${source_repo})) |"
+    else
+      echo "| 👤 **Kernel source** | **${_ks_label}** (\`${_ks_id}\`) |"
+    fi
   fi
   echo "| 🧬 **Kernel base** | \`android12-5.10\` |"
   echo "| 🛠️ **Build scope** | \`${BUILD_SCOPE}\` |"
@@ -218,8 +224,8 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
     echo
     echo "> CI diagnostics only — this section is **not** included in GitHub Release notes."
     echo
-    echo "| Manager | Actions ccache | ThinLTO | Object hits |"
-    echo "|:---|:---:|:---:|:---|"
+    echo "| Manager | Actions ccache | Actions ThinLTO |"
+    echo "|:---|:---:|:---:|"
     for artifact_dir in "${artifact_dirs[@]}"; do
       build_info="${artifact_dir}/build-info.txt"
       [[ -f "${build_info}" ]] || continue
@@ -227,24 +233,27 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
       m_display="$(manager_display "${m_name}")"
       m_ccache="$(get_info "${build_info}" ccache_hit)"
       m_thin="$(get_info "${build_info}" thinlto_cache_hit)"
-      m_stats="$(summary_format_ccache_hits "${artifact_dir}/ccache-stats.txt")"
-      echo "| **${m_display}** | \`${m_ccache:-unknown}\` | \`${m_thin:-n/a}\` | ${m_stats} |"
+      echo "| **${m_display}** | \`${m_ccache:-unknown}\` | \`${m_thin:-n/a}\` |"
     done
-    # Keys from first artifact (same source/toolchain matrix row)
-    first_ccache_key="$(get_info "${first_info}" ccache_key)"
-    first_thin_key="$(get_info "${first_info}" thinlto_cache_key)"
-    if [[ -n "${first_ccache_key}" || -n "${first_thin_key}" ]]; then
-      echo
-      echo "| | |"
-      echo "|:---|:---|"
-      if [[ -n "${first_ccache_key}" ]]; then
-        echo "| 🔑 **ccache key (sample)** | \`${first_ccache_key}\` |"
-      fi
-      if [[ -n "${first_thin_key}" ]]; then
-        echo "| 🔑 **ThinLTO key (sample)** | \`${first_thin_key}\` |"
-      fi
-    fi
     echo
+    # Embed default ccache -s text (same as ccache-stats.txt artifact) per manager.
+    for artifact_dir in "${artifact_dirs[@]}"; do
+      build_info="${artifact_dir}/build-info.txt"
+      stats_file="${artifact_dir}/ccache-stats.txt"
+      [[ -f "${build_info}" ]] || continue
+      m_name="$(get_info "${build_info}" manager)"
+      m_display="$(manager_display "${m_name}")"
+      echo "### ccache -s — ${m_display}"
+      echo
+      echo '```text'
+      if [[ -f "${stats_file}" ]]; then
+        cat "${stats_file}"
+      else
+        echo "(ccache-stats.txt not available)"
+      fi
+      echo '```'
+      echo
+    done
     echo "${SUMMARY_CACHE_END}"
   }
   echo "---"

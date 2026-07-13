@@ -1,6 +1,6 @@
 # Verified Defaults
 
-Last updated: **2026-07-13** (aligned with branch `feature/los-kernel-source-presets` @ `8d18663`).
+Last updated: **2026-07-13** (branch `feature/los-kernel-source-presets` — naming, auto toolchain, CI Cache section, Wild-style manager version).
 
 | Component | Repo | Default Ref | Version / Commit |
 |---|---|---|---|
@@ -70,4 +70,5 @@ Notes:
 - Ccache: **4 GiB** (Android clang) / **6 GiB** (LLVM 22), content-based compiler checks, multi-level restore-keys (toolchain+LTO → kernel → source → manager).
 - ThinLTO: separate Actions cache for `~/.cache/thinlto` when `lto=thin` (similar to WildKernels LTO cache bucket).
 - **Object-cache save:** ccache / ThinLTO save on **failure as well as success** (`always() && !cancelled() && exact miss`). Partial compiles (e.g. fail at 90%) still warm the next run. ZIP/release stay success-only.
+- **Summary Cache section:** CI/artifact summaries embed Actions hit flags + full `ccache -s` text (same as `ccache-stats.txt`). **Stripped** from GitHub Release notes (`matrix-summary-release.md`).
 - Disk: Wild-style SDK cleanup on kernel jobs (especially when LTO is enabled or free space is low).

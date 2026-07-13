@@ -121,6 +121,8 @@ AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
 
 LTO and toolchain are **not** in the filename (see flash banner + `build-info.*`).
 
+**Summaries:** build/matrix summaries include a **Cache** section (Actions ccache/ThinLTO hits + raw `ccache -s`). That block is for CI/artifacts only and is **removed** from draft GitHub Release notes.
+
 **CI flow (simplified):**
 
 ```text

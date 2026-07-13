@@ -79,13 +79,12 @@ SUMMARY_CACHE_START='<!-- marble-ci-cache-start -->'
 SUMMARY_CACHE_END='<!-- marble-ci-cache-end -->'
 
 # Emit a cache section to stdout (for CI/artifacts only — stripped before GitHub Release notes).
-# Args: ccache_hit thinlto_hit ccache_stats_line [ccache_key] [thinlto_key] [extra_markdown_rows...]
+# Args: ccache_hit thinlto_hit [path_to_ccache-stats.txt]
+# Mirrors default `ccache -s` text from the artifact when the stats file exists.
 summary_emit_cache_section() {
   local ccache_hit="${1:-unknown}"
   local thinlto_hit="${2:-n/a}"
-  local stats_line="${3:-n/a}"
-  local ccache_key="${4:-}"
-  local thinlto_key="${5:-}"
+  local stats_file="${3:-}"
 
   echo "${SUMMARY_CACHE_START}"
   echo "## 💾 Cache"
@@ -96,13 +95,16 @@ summary_emit_cache_section() {
   echo "|:---|:---|"
   echo "| 📦 **Actions ccache hit** | \`${ccache_hit}\` |"
   echo "| 🧵 **Actions ThinLTO hit** | \`${thinlto_hit}\` |"
-  echo "| 📊 **ccache object hits** | ${stats_line} |"
-  if [[ -n "${ccache_key}" ]]; then
-    echo "| 🔑 **ccache key** | \`${ccache_key}\` |"
+  echo
+  echo "### ccache -s"
+  echo
+  echo '```text'
+  if [[ -n "${stats_file}" && -f "${stats_file}" ]]; then
+    cat "${stats_file}"
+  else
+    echo "(ccache-stats.txt not available)"
   fi
-  if [[ -n "${thinlto_key}" ]]; then
-    echo "| 🔑 **ThinLTO key** | \`${thinlto_key}\` |"
-  fi
+  echo '```'
   echo
   echo "${SUMMARY_CACHE_END}"
 }

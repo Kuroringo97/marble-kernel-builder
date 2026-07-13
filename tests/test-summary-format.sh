@@ -89,6 +89,9 @@ required_patterns=(
   'marble-ci-cache-start'
   'Actions ccache hit'
   'GitHub Release notes'
+  'ccache -s'
+  '```text'
+  'github.com/mohdakil2426/android_kernel_xiaomi_marble'
 )
 
 # Hardcoded maintainer names must never appear in credits.
