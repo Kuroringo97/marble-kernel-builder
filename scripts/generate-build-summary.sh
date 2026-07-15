@@ -33,6 +33,9 @@ source_commit="$(get_info source_commit)"
 workflow_run="$(get_info workflow_run)"
 kernel_source_id="$(get_info kernel_source)"
 kernel_source_author="$(get_info kernel_source_author)"
+device_id="$(get_info device)"
+device_display="$(get_info device_display)"
+device_codenames="$(get_info device_codenames)"
 rom_support="$(get_info rom_support)"
 if [[ -z "${rom_support}" ]]; then
   rom_support="Official Xiaomi stock ${SUPPORTED_ROM_LABEL} only"
@@ -111,7 +114,7 @@ else
   susfs_badge_link="https://gitlab.com/simonpunk/susfs4ksu"
 fi
 
-device_badge_url="https://img.shields.io/badge/Poco_F5_%2F_Note_12_Turbo-marble_%7C_marblein-EF5350?style=for-the-badge"
+device_badge_url="$(summary_device_badge_url "${device_id}" "${device_display}" "${device_codenames}")"
 build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the-badge&logo=githubactions&logoColor=white"
 
 # ── Write summary ─────────────────────────────────────────────────────────────
@@ -119,9 +122,9 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   # ── Centered header with badges ──────────────────────────────────────────
   echo '<div align="center">'
   echo
-  echo "# 🪨 Marble Kernel"
+  echo "# 🪨 $(summary_device_heading "${device_id}")"
   echo
-  echo "### Poco F5 · Redmi Note 12 Turbo"
+  echo "### $(summary_device_subtitle "${device_id}" "${device_display}")"
   echo
   echo "[![Manager](${manager_badge_url})](${manager_badge_link})"
   echo "[![SUSFS](${susfs_badge_url})](${susfs_badge_link})"
@@ -142,7 +145,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo
   echo "| | |"
   echo "|:---|:---|"
-  echo "| 📱 **Device** | Poco F5 (\`marblein\`) · Redmi Note 12 Turbo (\`marble\`) |"
+  echo "| 📱 **Device** | $(summary_device_row "${device_id}" "${device_display}" "${device_codenames}") |"
   echo "| 🟠 **ROM Support** | **${rom_support}** |"
   if [[ -n "${kernel_source_author}" || -n "${kernel_source_id}" ]]; then
     _ks_label="${kernel_source_author:-${kernel_source_id}}"
@@ -245,7 +248,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "<br>"
   echo
   echo "- 🔓 Unlocked bootloader"
-  echo "- 📱 Poco F5 (\`marblein\`) or Redmi Note 12 Turbo (\`marble\`) **only**"
+  echo "- 📱 $(summary_device_prereq_line "${device_id}" "${device_display}" "${device_codenames}") **only**"
   echo "- 🟠 **${rom_support}** — flash only on a matching ROM family"
   echo "- 💾 Stock \`boot.img\` from the **same ROM/firmware** stored safely outside the device"
   if [[ "${manager_name}" != "none" && -n "${manager_app_url}" ]]; then
@@ -264,7 +267,7 @@ build_badge_url="https://img.shields.io/badge/Build-Passing-2088FF?style=for-the
   echo "1. Download \`${zip_name}\`"
   echo "2. Verify it against the SHA256 shown in this summary before flashing"
   echo "3. Flash the ZIP to the active slot via **[Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)**"
-  echo "4. The AnyKernel3 installer will verify your device codename and **automatically back up** your current boot image to \`/sdcard/marble-kernel-backup/\` before writing"
+  echo "4. The AnyKernel3 installer will verify your device codename and **automatically back up** your current boot image to \`$(summary_device_backup_dir "${device_id}")/\` before writing"
   if [[ "${manager_name}" != "none" ]]; then
     echo "5. After boot — install / open the **${manager_display}** manager app"
   fi

@@ -94,6 +94,9 @@ fi
 source_repo="$(get_info "${first_info}" source_repo)"
 source_ref="$(get_info "${first_info}" source_ref)"
 source_commit="$(get_info "${first_info}" source_commit)"
+device_id="$(get_info "${first_info}" device)"
+device_display="$(get_info "${first_info}" device_display)"
+device_codenames="$(get_info "${first_info}" device_codenames)"
 workflow_run="$(get_info "${first_info}" workflow_run)"
 susfs_reported="$(get_info "${first_info}" susfs_reported_version)"
 susfs_version="$(get_info "${first_info}" susfs_version)"
@@ -122,7 +125,7 @@ if [[ "${enable_susfs_first}" == "true" && -n "${susfs_display}" ]]; then
 else
   susfs_badge_url="https://img.shields.io/badge/SUSFS-Disabled-757575?logo=gitlab&logoColor=white"
 fi
-device_badge_url="https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350"
+device_badge_url="$(summary_device_badge_url_compact "${device_id}" "${device_display}")"
 scope_badge_url="https://img.shields.io/badge/Scope-$(badge_encode "${BUILD_SCOPE}")-2088FF"
 lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C27B0"
 
@@ -133,11 +136,11 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo
   echo "<br/>"
   echo
-  echo "# Marble Kernel · Matrix Build"
+  echo "# $(summary_device_heading "${device_id}") · Matrix Build"
   echo
   echo "**Combined summary for a successful multi-manager CI run**"
   echo
-  echo "\`marble\` · \`marblein\` · \`${BUILD_SCOPE}\`"
+  echo "$(summary_device_codenames_inline "${device_id}" "${device_codenames}") · \`${BUILD_SCOPE}\`"
   echo
   echo "<br/>"
   echo
@@ -161,7 +164,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo ">"
   echo "> - 💾 Back up \`boot.img\` from the **same** ROM / firmware"
   echo "> - 🔓 Unlocked bootloader required"
-  echo "> - 📱 **Poco F5** (\`marblein\`) or **Redmi Note 12 Turbo** (\`marble\`) only"
+  echo "> - 📱 $(summary_device_warning_line "${device_id}" "${device_display}" "${device_codenames}") only"
   echo "> - 🧩 Match **device + ROM** to the build you flash"
   echo "> - ✅ Verify **SHA-256** before flashing"
   echo
@@ -180,7 +183,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   kernel_source_id="$(get_info "${first_info}" kernel_source)"
   kernel_source_author="$(get_info "${first_info}" kernel_source_author)"
   rom_support="$(get_info "${first_info}" rom_support)"
-  echo "| 📱 **Device** | Poco F5 (\`marblein\`) · Redmi Note 12 Turbo (\`marble\`) |"
+  echo "| 📱 **Device** | $(summary_device_row "${device_id}" "${device_display}" "${device_codenames}") |"
   if [[ -n "${rom_support}" ]]; then
     echo "| 🟠 **ROM support** | **${rom_support}** |"
   fi
@@ -400,7 +403,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo "<br/>"
   echo
   echo "- 🔓 Unlocked bootloader"
-  echo "- 📱 Poco F5 (\`marblein\`) or Redmi Note 12 Turbo (\`marble\`) only"
+  echo "- 📱 $(summary_device_prereq_line "${device_id}" "${device_display}" "${device_codenames}") only"
   echo "- 🧩 Kernel build that matches your **device + ROM**"
   echo "- 💾 Original \`boot.img\` from the same ROM/firmware stored **off-device**"
   echo "- 🧵 Free runners: avoid many parallel LOS+LLVM jobs; prefer \`lto=thin\`"
@@ -427,7 +430,7 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo "1. Download the ZIP for **one** manager"
   echo "2. Verify **SHA-256** against the table above"
   echo "3. Flash to the **active slot** with [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher/releases)"
-  echo "4. AnyKernel3 will verify codename (\`marble\` / \`marblein\`) and **auto-back up** boot to \`/sdcard/marble-kernel-backup/\`"
+  echo "4. AnyKernel3 will verify codename ($(summary_device_codenames_slash "${device_id}" "${device_codenames}")) and **auto-back up** boot to \`$(summary_device_backup_dir "${device_id}")/\`"
   echo "5. Reboot · install / open the matching manager app"
   if [[ "${enable_susfs_first}" == "true" ]]; then
     echo "6. Install the SUSFS userspace module, configure rules, reboot"
@@ -478,11 +481,11 @@ lto_badge_url="https://img.shields.io/badge/LTO-$(badge_encode "${lto_mode}")-9C
   echo
   echo '<div align="center">'
   echo
-  echo "**⚡ Built with GitHub Actions · for Marble**"
+  echo "**⚡ Built with GitHub Actions · for $(summary_device_cap "${device_id}")**"
   echo
   echo "<br/>"
   echo
-  echo "\`marble\` · \`marblein\`"
+  summary_device_codenames_inline "${device_id}" "${device_codenames}"
   echo
   echo '</div>'
 } > "${MATRIX_SUMMARY}"

@@ -10,6 +10,10 @@ on:
       kernel_source:
         required: true
         type: string
+      device:
+        required: false
+        type: string
+        default: marble
       source_ref:
         required: false
         type: string
@@ -77,6 +81,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       KERNEL_SOURCE: ${{ inputs.kernel_source }}
+      DEVICE: ${{ inputs.device }}
       SOURCE_REF: ${{ inputs.source_ref }}
       MANAGER: ${{ inputs.manager }}
       MANAGER_REF: ${{ inputs.manager_ref }}
@@ -104,7 +109,7 @@ jobs:
         if: ${{ inputs.run_policy_tests }}
         run: |
           for test_script in tests/test-*.sh; do
-            env -u SOURCE_REPO -u SOURCE_REF -u KERNEL_SOURCE -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
+            env -u SOURCE_REPO -u SOURCE_REF -u KERNEL_SOURCE -u DEVICE -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
           done
@@ -344,6 +349,9 @@ jobs:
             echo "kernel_source=${KERNEL_SOURCE}"
             echo "kernel_source_display=${KERNEL_SOURCE_DISPLAY:-}"
             echo "kernel_source_author=${KERNEL_SOURCE_AUTHOR:-}"
+            echo "device=${DEVICE:-marble}"
+            echo "device_display=${DEVICE_DISPLAY:-}"
+            echo "device_codenames=${DEVICE_CODENAMES:-}"
             echo "rom_family=${ROM_FAMILY:-}"
             echo "rom_support=${ROM_SUPPORT:-}"
             echo "supported_rom_label=${SUPPORTED_ROM_LABEL:-}"

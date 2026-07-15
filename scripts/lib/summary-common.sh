@@ -21,6 +21,115 @@ badge_encode() {
   echo "$1" | sed 's/ /_/g; s/#/%23/g; s/-/--/g'
 }
 
+# Device helpers: empty/marble fall back to the historical marble literals so
+# existing artifacts and summaries stay byte-identical.
+badge_encode_device() {
+  echo "$1" | sed 's/ /_/g; s/#/%23/g; s/-/--/g; s,/,%2F,g; s/|/%7C/g'
+}
+
+summary_codenames_join() {
+  local codenames="${1:-}" sep="${2:- · }"
+  local -a names
+  read -r -a names <<<"${codenames}"
+  local out="" c
+  for c in "${names[@]}"; do
+    [[ -n "${out}" ]] && out+="${sep}"
+    out+="\`${c}\`"
+  done
+  printf '%s\n' "${out}"
+}
+
+summary_device_heading() {
+  case "${1:-}" in
+    ""|marble) echo "Marble Kernel" ;;
+    *) echo "${1^} Kernel" ;;
+  esac
+}
+
+summary_device_cap() {
+  case "${1:-}" in
+    ""|marble) echo "Marble" ;;
+    *) echo "${1^}" ;;
+  esac
+}
+
+summary_device_subtitle() {
+  local device="${1:-}" display="${2:-}"
+  case "${device}" in
+    ""|marble) echo "Poco F5 · Redmi Note 12 Turbo" ;;
+    *) display="${display:-${device}}"; echo "${display// \/ / · }" ;;
+  esac
+}
+
+summary_device_row() {
+  local device="${1:-}" display="${2:-}" codenames="${3:-}"
+  case "${device}" in
+    ""|marble) printf 'Poco F5 (`marblein`) · Redmi Note 12 Turbo (`marble`)\n' ;;
+    *) printf '%s (%s)\n' "${display:-${device}}" "$(summary_codenames_join "${codenames:-${device}}" ", ")" ;;
+  esac
+}
+
+summary_device_prereq_line() {
+  local device="${1:-}" display="${2:-}" codenames="${3:-}"
+  case "${device}" in
+    ""|marble) printf 'Poco F5 (`marblein`) or Redmi Note 12 Turbo (`marble`)\n' ;;
+    *) printf '%s (%s)\n' "${display:-${device}}" "$(summary_codenames_join "${codenames:-${device}}" ", ")" ;;
+  esac
+}
+
+summary_device_warning_line() {
+  local device="${1:-}" display="${2:-}" codenames="${3:-}"
+  case "${device}" in
+    ""|marble) printf '**Poco F5** (`marblein`) or **Redmi Note 12 Turbo** (`marble`)\n' ;;
+    *) printf '**%s** (%s)\n' "${display:-${device}}" "$(summary_codenames_join "${codenames:-${device}}" ", ")" ;;
+  esac
+}
+
+summary_device_codenames_inline() {
+  local device="${1:-}" codenames="${2:-}"
+  case "${device}" in
+    ""|marble) printf '`marble` · `marblein`\n' ;;
+    *) summary_codenames_join "${codenames:-${device}}" " · " ;;
+  esac
+}
+
+summary_device_codenames_slash() {
+  local device="${1:-}" codenames="${2:-}"
+  case "${device}" in
+    ""|marble) printf '`marble` / `marblein`\n' ;;
+    *) summary_codenames_join "${codenames:-${device}}" " / " ;;
+  esac
+}
+
+summary_device_backup_dir() {
+  local device="${1:-marble}"
+  echo "/sdcard/${device:-marble}-kernel-backup"
+}
+
+summary_device_badge_url() {
+  local device="${1:-}" display="${2:-}" codenames="${3:-}"
+  case "${device}" in
+    ""|marble)
+      echo "https://img.shields.io/badge/Poco_F5_%2F_Note_12_Turbo-marble_%7C_marblein-EF5350?style=for-the-badge"
+      ;;
+    *)
+      local label joined msg
+      label="$(badge_encode_device "${display:-${device}}")"
+      joined="${codenames:-${device}}"
+      msg="$(badge_encode_device "${joined// / | }")"
+      echo "https://img.shields.io/badge/${label}-${msg}-EF5350?style=for-the-badge"
+      ;;
+  esac
+}
+
+summary_device_badge_url_compact() {
+  local device="${1:-}" display="${2:-}"
+  case "${device}" in
+    ""|marble) echo "https://img.shields.io/badge/Device-Poco_F5_%2F_RN12_Turbo-EF5350" ;;
+    *) echo "https://img.shields.io/badge/Device-$(badge_encode_device "${display:-${device}}")-EF5350" ;;
+  esac
+}
+
 manager_display() {
   case "$1" in
     none)          echo "No Manager" ;;

@@ -1,0 +1,16 @@
+{
+  "marble": {
+    "display": "Poco F5 / Redmi Note 12 Turbo",
+    "codenames": ["marble", "marblein"],
+    "kernel_title": "Marble Kernel",
+    "zip_token": "marble",
+    "backup_slug": "marble"
+  },
+  "mondrian": {
+    "display": "Poco F5 Pro / Redmi K60",
+    "codenames": ["mondrian"],
+    "kernel_title": "Mondrian Kernel",
+    "zip_token": "mondrian",
+    "backup_slug": "mondrian"
+  }
+}

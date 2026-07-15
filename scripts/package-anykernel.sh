@@ -6,10 +6,12 @@ _caller_rom_label="${SUPPORTED_ROM_LABEL+x}"
 _caller_rom_family="${ROM_FAMILY+x}"
 _caller_kernel_source="${KERNEL_SOURCE+x}"
 _caller_package_family="${PACKAGE_FAMILY+x}"
+_caller_device="${DEVICE+x}"
 _preset_rom_label="${SUPPORTED_ROM_LABEL:-}"
 _preset_rom_family="${ROM_FAMILY:-}"
 _preset_kernel_source="${KERNEL_SOURCE:-}"
 _preset_package_family="${PACKAGE_FAMILY:-}"
+_preset_device="${DEVICE:-}"
 
 source config/marble.env
 
@@ -51,8 +53,47 @@ elif [[ -n "${_caller_kernel_source}" || -n "${_caller_rom_family}" ]]; then
   # release/kernel-source.env (e.g. prior LOS resolve left PACKAGE_FAMILY=LOS).
   PACKAGE_FAMILY=""
 fi
-unset _caller_rom_label _caller_rom_family _caller_kernel_source _caller_package_family
-unset _preset_rom_label _preset_rom_family _preset_kernel_source _preset_package_family
+if [[ -n "${_caller_device}" ]]; then
+  DEVICE="${_preset_device}"
+elif [[ -n "${_caller_kernel_source}" || -n "${_caller_rom_family}" ]]; then
+  # Caller described a build identity without DEVICE — ignore stale env files.
+  DEVICE="marble"
+else
+  DEVICE="${DEVICE:-marble}"
+fi
+unset _caller_rom_label _caller_rom_family _caller_kernel_source _caller_package_family _caller_device
+unset _preset_rom_label _preset_rom_family _preset_kernel_source _preset_package_family _preset_device
+
+if [[ ! -f config/devices.json ]]; then
+  echo "::error::config/devices.json is missing"
+  exit 1
+fi
+device_env="$(DEVICE="${DEVICE}" python3 - config/devices.json <<'PY'
+import json
+import os
+import shlex
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    devices = json.load(fh)
+device = os.environ["DEVICE"]
+if device not in devices:
+    print(f"::error::Unsupported device: {device}", file=sys.stderr)
+    print("Allowed: " + ", ".join(sorted(devices)), file=sys.stderr)
+    sys.exit(1)
+meta = devices[device]
+values = {
+    "DEVICE_DISPLAY": meta.get("display") or device,
+    "DEVICE_KERNEL_TITLE": meta.get("kernel_title") or f"{device.capitalize()} Kernel",
+    "DEVICE_ZIP_TOKEN": meta.get("zip_token") or device,
+    "DEVICE_BACKUP_SLUG": meta.get("backup_slug") or device,
+    "DEVICE_CODENAMES": " ".join(meta.get("codenames") or [device]),
+}
+for key, value in values.items():
+    print(f"{key}={shlex.quote(value)}")
+PY
+)"
+eval "${device_env}"
 
 derive_package_family() {
   local rom_family="${ROM_FAMILY:-}"
@@ -125,9 +166,12 @@ if [[ "${ENABLE_SUSFS}" == "true" ]]; then
   susfs_segment="_susfs-${susfs_ver}"
 fi
 
+device_token="$(sanitize_token "${DEVICE_ZIP_TOKEN}")"
+[[ -n "${device_token}" ]] || device_token="${DEVICE}"
+
 # Locked format:
-# AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
-zip_name="AK3_marble_${PACKAGE_FAMILY}_${source_token}_${manager_identity}${susfs_segment}_r${run_number}.zip"
+# AK3_<device>_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+zip_name="AK3_${device_token}_${PACKAGE_FAMILY}_${source_token}_${manager_identity}${susfs_segment}_r${run_number}.zip"
 
 generate_banner_text() {
   local family source_line manager_line susfs_line lto_line
@@ -154,10 +198,10 @@ generate_banner_text() {
   fi
 
   cat <<EOF
-Marble Kernel
+${DEVICE_KERNEL_TITLE}
 ────────────────────────────────────────
-Device   : Poco F5 / Redmi Note 12 Turbo
-Codename : marble | marblein
+Device   : ${DEVICE_DISPLAY}
+Codename : ${DEVICE_CODENAMES// / | }
 Family   : ${family}
 Source   : ${source_line}
 Manager  : ${manager_line}
@@ -170,6 +214,32 @@ Backup boot is created before flash.
 EOF
 }
 
+render_ak3_script() {
+  local name1 name2 _ rendered
+  read -r name1 name2 _ <<<"${DEVICE_CODENAMES}"
+  rendered="$(
+    sed \
+      -e "s|^kernel.string=.*|kernel.string=${DEVICE_KERNEL_TITLE} for ${DEVICE_DISPLAY}|" \
+      -e "s|^device.name1=.*|device.name1=${name1}|" \
+      -e "s|marble-kernel-backup|${DEVICE_BACKUP_SLUG}-kernel-backup|" \
+      -e "s|boot-marble-|boot-${DEVICE_BACKUP_SLUG}-|g" \
+      -e "s|device=marble/marblein|device=${DEVICE_CODENAMES// //}|" \
+      -e "s|Supported devices: marble, marblein|Supported devices: ${DEVICE_CODENAMES// /, }|" \
+      ak3/anykernel.sh |
+      if [[ -n "${name2}" ]]; then
+        sed -e "s|^device.name2=.*|device.name2=${name2}|"
+      else
+        sed -e '/^device.name2=/d'
+      fi
+  )"
+  if ! grep -Fxq "device.name1=${name1}" <<<"${rendered}" ||
+    ! grep -Fq "/sdcard/${DEVICE_BACKUP_SLUG}-kernel-backup" <<<"${rendered}"; then
+    echo "::error::AnyKernel3 device rewrite failed for ${DEVICE}" >&2
+    exit 1
+  fi
+  printf '%s\n' "${rendered}"
+}
+
 if [[ "${PACKAGE_NAME_ONLY:-false}" == "true" ]]; then
   printf '%s\n' "${zip_name}"
   exit 0
@@ -177,6 +247,11 @@ fi
 
 if [[ "${PACKAGE_BANNER_ONLY:-false}" == "true" ]]; then
   generate_banner_text
+  exit 0
+fi
+
+if [[ "${PACKAGE_AK3_PROPS_ONLY:-false}" == "true" ]]; then
+  render_ak3_script
   exit 0
 fi
 
@@ -194,6 +269,7 @@ git -C "${work_dir}/ak3" checkout -q --detach FETCH_HEAD
 anykernel3_commit="$(git -C "${work_dir}/ak3" rev-parse HEAD)"
 echo "anykernel3_commit=${anykernel3_commit}" >> release/resolved-refs.env
 rsync -a ak3/ "${work_dir}/ak3/"
+render_ak3_script > "${work_dir}/ak3/anykernel.sh"
 generate_banner_text > "${work_dir}/ak3/banner"
 cp "${image_path}" "${work_dir}/ak3/Image"
 

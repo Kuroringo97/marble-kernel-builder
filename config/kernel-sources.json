@@ -9,6 +9,7 @@
     "rom_support": "Official Xiaomi stock HyperOS only",
     "defconfig_mode": "single",
     "defconfig": "marble_defconfig",
+    "supported_devices": ["marble"],
     "notes": "Existing HyperOS-oriented Melt-based marble source. Default for stock HyperOS."
   },
   "lineageos": {
@@ -24,11 +25,12 @@
     "config_fragments": [
       "vendor/waipio_GKI.config",
       "vendor/xiaomi_GKI.config",
-      "vendor/marble_GKI.config",
+      "vendor/{device}_GKI.config",
       "vendor/debugfs.config"
     ],
     "recommended_toolchain": "llvm-22.1.8",
-    "notes": "Official LineageOS SM8450 kernel (Poco F5 / marble). Custom LOS-based ROMs only. Needs llvm-22.1.8 (armv9 flags)."
+    "supported_devices": ["marble", "mondrian"],
+    "notes": "Official LineageOS SM8450 kernel (marble / mondrian). Custom LOS-based ROMs only. Needs llvm-22.1.8 (armv9 flags)."
   },
   "evolution-x": {
     "display": "Evolution-X",
@@ -43,7 +45,7 @@
     "config_fragments": [
       "vendor/waipio_GKI.config",
       "vendor/xiaomi_GKI.config",
-      "vendor/marble_GKI.config",
+      "vendor/{device}_GKI.config",
       "vendor/debugfs.config"
     ],
     "recommended_toolchain": "llvm-22.1.8",
@@ -62,7 +64,7 @@
     "config_fragments": [
       "vendor/waipio_GKI.config",
       "vendor/xiaomi_GKI.config",
-      "vendor/marble_GKI.config",
+      "vendor/{device}_GKI.config",
       "vendor/debugfs.config",
       "vendor/infinity.config"
     ],

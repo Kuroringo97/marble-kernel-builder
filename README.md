@@ -62,12 +62,15 @@
 
 ## 📱 Supported Devices
 
-| Device | Codename |
-|--------|----------|
-| **Poco F5** | `marblein` |
-| **Redmi Note 12 Turbo** | `marble` |
+| Device | Codename | `device` input | Kernel sources |
+|--------|----------|----------------|----------------|
+| **Poco F5** | `marblein` | `marble` (default) | all presets |
+| **Redmi Note 12 Turbo** | `marble` | `marble` (default) | all presets |
+| **Poco F5 Pro** | `mondrian` | `mondrian` | `lineageos` only (for now) |
+| **Redmi K60** | `mondrian` | `mondrian` | `lineageos` only (for now) |
 
 > Always flash a build intended for your device and ROM base. Other devices are not supported.
+> `mondrian` shares the SM8450 LOS kernel tree and builds with `vendor/mondrian_GKI.config`; `melt` is a marble-only tree. `evolution-x` / `pablo` will be enabled for mondrian after verification.
 
 ---
 
@@ -111,7 +114,7 @@ Named after the project / author. Pick one in **Build Marble Kernel**:
 ### Flash ZIP naming
 
 ```text
-AK3_marble_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
+AK3_<device>_<FAMILY>_<source>_<manager>[-version][-codeN][_susfs-vX.Y.Z]_rN.zip
 ```
 
 | FAMILY | Sources |
@@ -220,6 +223,7 @@ Do **not** enable SUSFS with `none` or `kernelsu`.
 | `susfs_version` | `v2.2.0` | `v2.2.0` · `v2.1.0` · `custom` |
 | `susfs_ref` | *(empty)* | Branch/tag/commit — only with `custom` |
 | `kernel_source` | `melt` | Dropdown: `melt` · `lineageos` · `evolution-x` · `pablo` |
+| `device` | `marble` | `marble` · `mondrian` (mondrian: `lineageos` preset only) |
 | `source_ref` | *(empty)* | Optional branch/tag/commit override (preset default if empty) |
 | `build_scope` | `image-only` | `image-only` or `full` |
 | `toolchain` | `android-r416183b` | `android-r416183b` (default) or experimental `llvm-22.1.8` |
@@ -241,7 +245,8 @@ Run in order. Verify each step before the next:
 | **2** | Same with one manager · SUSFS **off** |
 | **3** | `kernelsu-next` / `sukisu-ultra` / `resukisu` · SUSFS **on** (boot-proven on Melt) |
 | **4** | LOS presets · `toolchain=llvm-22.1.8` · `lto=thin` · start with `build_none` |
-| **5** | Multi-manager matrix · optional `create_draft_release` |
+| **5** | `device=mondrian` · `lineageos` · `build_none` · `lto=thin` — flash-test on device before any release |
+| **6** | Multi-manager matrix · optional `create_draft_release` |
 
 ---
 
@@ -268,6 +273,7 @@ AK3_marble_LOS_lineageos_ksunext-v3.2.0-code33203_susfs-v2.2.0_r121.zip
 AK3_marble_LOS_evolution-x_sukisu-v4.1.3-code40813_susfs-v2.2.0_r122.zip
 AK3_marble_LOS_pablo_resukisu-v4.1.0-code34990_r123.zip
 AK3_marble_MELT_melt_noroot_r124.zip
+AK3_mondrian_LOS_lineageos_noroot_r125.zip
 ```
 
 > Versioning prefers manager **build version + numeric code**.  

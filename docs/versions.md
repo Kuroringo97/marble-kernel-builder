@@ -23,7 +23,7 @@ Last updated: **2026-07-13** (branch `feature/los-kernel-source-presets` — nam
 
 The workflow resolves branch, tag, and commit inputs to exact commits at run time and records them in `release/build-info.txt`. For SUSFS, the user chooses `susfs_version=v2.2.0`, `susfs_version=v2.1.0`, or `susfs_version=custom`. Custom mode uses `susfs_ref` and verifies `susfs_expected_version` when provided.
 
-Device targets remain Poco F5 (`marblein`) and Redmi Note 12 Turbo (`marble`). ROM support depends on the selected kernel preset: `melt` is stock HyperOS; `lineageos`, `evolution-x`, and `pablo` are for LOS-based custom ROMs only.
+Device targets are Poco F5 (`marblein`) / Redmi Note 12 Turbo (`marble`) and, via `device=mondrian`, Poco F5 Pro / Redmi K60 (`mondrian`). ROM support depends on the selected kernel preset: `melt` is stock HyperOS (marble-only); `lineageos`, `evolution-x`, and `pablo` are for LOS-based custom ROMs only. `vendor/mondrian_GKI.config` is verified present at all three LOS preset refs (`lineage-23.2`, `cnb`, `16`); mondrian is currently enabled on `lineageos` only — flip `supported_devices` in `config/kernel-sources.json` per preset after verifying the others.
 
 **ZIP naming (2026-07-13+):**
 

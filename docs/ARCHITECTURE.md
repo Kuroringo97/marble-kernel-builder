@@ -148,9 +148,10 @@ marble-kernel-builder/
 │   │   └── preflight.yml       # Cheap full static gate (no kernel compile)
 │   └── dependabot.yml
 ├── config/
-│   ├── marble.env              # Device, pins, toolchain URLs/SHAs
+│   ├── marble.env              # Pins, toolchain URLs/SHAs
 │   ├── managers.json           # Official manager allowlist + refs
 │   ├── kernel-sources.json     # Author-named kernel presets
+│   ├── devices.json            # Device identities (marble, mondrian)
 │   └── susfs-refs.json         # SUSFS version → commit map
 ├── scripts/                    # Primary logic (bash + light Python)
 │   ├── resolve-kernel-source.sh
@@ -281,6 +282,7 @@ Parallel matrix builds of different managers share the group key only when those
 | `susfs_version` | choice | `v2.2.0` | `v2.2.0` · `v2.1.0` · `custom` |
 | `susfs_ref` | string | empty | Only for custom SUSFS |
 | `kernel_source` | choice | `melt` | `melt` · `lineageos` · `evolution-x` · `pablo` |
+| `device` | choice | `marble` | `marble` · `mondrian` — preset must list it in `supported_devices` |
 | `source_ref` | string | empty | Override preset branch/tag/commit |
 | `build_scope` | choice | `image-only` | `image-only` · `full` |
 | `toolchain` | choice | `android-r416183b` | Or `llvm-22.1.8` (required for LOS armv9) |
@@ -382,9 +384,11 @@ make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 CC=… marble_defconfig
 gki_defconfig
   + arch/arm64/configs/vendor/waipio_GKI.config
   + arch/arm64/configs/vendor/xiaomi_GKI.config
-  + arch/arm64/configs/vendor/marble_GKI.config
+  + arch/arm64/configs/vendor/{device}_GKI.config   ← marble_GKI / mondrian_GKI
   + arch/arm64/configs/vendor/debugfs.config
 ```
+
+LOS presets store the device fragment as a `{device}` placeholder; `resolve-kernel-source.sh` substitutes the selected `device` (from `config/devices.json`) and rejects devices missing from the preset's `supported_devices` (default `["marble"]`). Currently `lineageos` supports `marble` + `mondrian`; `melt` / `evolution-x` / `pablo` are marble-only.
 
 Merged via `scripts/kconfig/merge_config.sh -O out -m out/.config <fragments…>`, then LTO/KSU flags and `olddefconfig`.
 

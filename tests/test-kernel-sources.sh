@@ -22,6 +22,7 @@ out="$(
   cd "${tmp_dir}"
   mkdir -p config scripts release
   cp "${repo_root}/config/kernel-sources.json" config/
+  cp "${repo_root}/config/devices.json" config/
   cp "${repo_root}/scripts/resolve-kernel-source.sh" scripts/
   KERNEL_SOURCE=melt SOURCE_REF='' bash scripts/resolve-kernel-source.sh
   cat release/kernel-source.env

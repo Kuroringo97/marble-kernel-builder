@@ -40,6 +40,11 @@ supported = [
 ]
 
 data = {
+    "device": {
+        "name": info.get("device", ""),
+        "display": info.get("device_display", ""),
+        "codenames": info.get("device_codenames", "").split(),
+    },
     "source": {
         "repo": info.get("source_repo", ""),
         "ref": info.get("source_ref", ""),

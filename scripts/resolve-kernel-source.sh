@@ -4,25 +4,35 @@ set -euo pipefail
 KERNEL_SOURCE="${KERNEL_SOURCE:-melt}"
 # Optional override for branch/tag/commit. Empty means use the preset default.
 SOURCE_REF="${SOURCE_REF:-}"
+DEVICE="${DEVICE:-marble}"
 
 if [[ ! -f config/kernel-sources.json ]]; then
   echo "::error::config/kernel-sources.json is missing"
   exit 1
 fi
+if [[ ! -f config/devices.json ]]; then
+  echo "::error::config/devices.json is missing"
+  exit 1
+fi
 
-eval "$(
-  KERNEL_SOURCE="${KERNEL_SOURCE}" SOURCE_REF="${SOURCE_REF}" python3 - config/kernel-sources.json <<'PY'
+resolved_env="$(
+  KERNEL_SOURCE="${KERNEL_SOURCE}" SOURCE_REF="${SOURCE_REF}" DEVICE="${DEVICE}" \
+    python3 - config/kernel-sources.json config/devices.json <<'PY'
 import json
 import os
 import shlex
 import sys
 
 config_path = sys.argv[1]
+devices_path = sys.argv[2]
 kernel_source = os.environ.get("KERNEL_SOURCE", "melt")
 source_ref_override = os.environ.get("SOURCE_REF", "")
+device = os.environ.get("DEVICE", "marble")
 
 with open(config_path, encoding="utf-8") as fh:
     presets = json.load(fh)
+with open(devices_path, encoding="utf-8") as fh:
+    devices = json.load(fh)
 
 if kernel_source not in presets:
     allowed = ", ".join(sorted(presets))
@@ -30,7 +40,26 @@ if kernel_source not in presets:
     print(f"Allowed: {allowed}", file=sys.stderr)
     sys.exit(1)
 
+if device not in devices:
+    allowed = ", ".join(sorted(devices))
+    print(f"::error::Unknown device: {device}", file=sys.stderr)
+    print(f"Allowed: {allowed}", file=sys.stderr)
+    sys.exit(1)
+
 preset = presets[kernel_source]
+
+supported_devices = preset.get("supported_devices") or ["marble"]
+if device not in supported_devices:
+    supported = ", ".join(supported_devices)
+    print(
+        f"::error::kernel_source {kernel_source} does not support device {device} (supported: {supported})",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+device_meta = devices[device]
+device_display = device_meta.get("display") or device
+device_codenames = " ".join(device_meta.get("codenames") or [device])
 display = preset.get("display") or kernel_source
 author = preset.get("author") or display
 repo = preset.get("repo") or ""
@@ -41,7 +70,11 @@ rom_support = preset.get("rom_support") or ""
 defconfig_mode = preset.get("defconfig_mode") or ""
 defconfig = preset.get("defconfig") or ""
 base_defconfig = preset.get("base_defconfig") or ""
-fragments = preset.get("config_fragments") or []
+fragments = [f.replace("{device}", device) for f in preset.get("config_fragments") or []]
+for fragment in fragments:
+    if "{" in fragment or "}" in fragment:
+        print(f"::error::Unresolved placeholder in config fragment: {fragment}", file=sys.stderr)
+        sys.exit(1)
 config_fragments = " ".join(fragments)
 recommended_toolchain = preset.get("recommended_toolchain") or ""
 
@@ -88,6 +121,9 @@ values = {
     "KERNEL_SOURCE": kernel_source,
     "KERNEL_SOURCE_DISPLAY": display,
     "KERNEL_SOURCE_AUTHOR": author,
+    "DEVICE": device,
+    "DEVICE_DISPLAY": device_display,
+    "DEVICE_CODENAMES": device_codenames,
     "SOURCE_REPO": repo,
     "SOURCE_REF": resolved_ref,
     "SUPPORTED_ROM_LABEL": rom_label,
@@ -104,6 +140,7 @@ for key, value in values.items():
     print(f"{key}={shlex.quote(value)}")
 PY
 )"
+eval "${resolved_env}"
 
 mkdir -p release
 {
@@ -111,6 +148,9 @@ mkdir -p release
   echo "KERNEL_SOURCE=$(printf '%q' "${KERNEL_SOURCE}")"
   echo "KERNEL_SOURCE_DISPLAY=$(printf '%q' "${KERNEL_SOURCE_DISPLAY}")"
   echo "KERNEL_SOURCE_AUTHOR=$(printf '%q' "${KERNEL_SOURCE_AUTHOR}")"
+  echo "DEVICE=$(printf '%q' "${DEVICE}")"
+  echo "DEVICE_DISPLAY=$(printf '%q' "${DEVICE_DISPLAY}")"
+  echo "DEVICE_CODENAMES=$(printf '%q' "${DEVICE_CODENAMES}")"
   echo "SOURCE_REPO=$(printf '%q' "${SOURCE_REPO}")"
   echo "SOURCE_REF=$(printf '%q' "${SOURCE_REF}")"
   echo "SUPPORTED_ROM_LABEL=$(printf '%q' "${SUPPORTED_ROM_LABEL}")"
@@ -129,6 +169,9 @@ if [[ -n "${GITHUB_ENV:-}" ]]; then
     echo "KERNEL_SOURCE=${KERNEL_SOURCE}"
     echo "KERNEL_SOURCE_DISPLAY=${KERNEL_SOURCE_DISPLAY}"
     echo "KERNEL_SOURCE_AUTHOR=${KERNEL_SOURCE_AUTHOR}"
+    echo "DEVICE=${DEVICE}"
+    echo "DEVICE_DISPLAY=${DEVICE_DISPLAY}"
+    echo "DEVICE_CODENAMES=${DEVICE_CODENAMES}"
     echo "SOURCE_REPO=${SOURCE_REPO}"
     echo "SOURCE_REF=${SOURCE_REF}"
     echo "SUPPORTED_ROM_LABEL=${SUPPORTED_ROM_LABEL}"
@@ -149,10 +192,12 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "source_ref=${SOURCE_REF}"
     echo "kernel_source=${KERNEL_SOURCE}"
     echo "kernel_source_display=${KERNEL_SOURCE_DISPLAY}"
+    echo "device=${DEVICE}"
   } >> "${GITHUB_OUTPUT}"
 fi
 
 echo "Resolved kernel source preset '${KERNEL_SOURCE}' (${KERNEL_SOURCE_AUTHOR})"
+echo "  device=${DEVICE}"
 echo "  repo=${SOURCE_REPO}"
 echo "  ref=${SOURCE_REF}"
 echo "  rom_label=${SUPPORTED_ROM_LABEL}"

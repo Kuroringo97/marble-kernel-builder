@@ -48,6 +48,13 @@ on:
           - lineageos
           - evolution-x
           - pablo
+      device:
+        description: "Target device (mondrian: lineageos preset only)"
+        type: choice
+        default: marble
+        options:
+          - marble
+          - mondrian
       source_ref:
         description: "Override branch/tag/commit (empty = preset default)"
         required: false
@@ -88,7 +95,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.device }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
   cancel-in-progress: false
 
 jobs:
@@ -113,9 +120,10 @@ jobs:
             tests/test-lto-policy.sh \
             tests/test-manager-policy.sh \
             tests/test-matrix-generator.sh \
-            tests/test-susfs-presets.sh
+            tests/test-susfs-presets.sh \
+            tests/test-devices.sh
           do
-            env -u SOURCE_REPO -u SOURCE_REF -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
+            env -u SOURCE_REPO -u SOURCE_REF -u DEVICE -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
           done
@@ -146,6 +154,7 @@ jobs:
     uses: ./.github/workflows/build-core.yml
     with:
       kernel_source: ${{ inputs.kernel_source }}
+      device: ${{ inputs.device }}
       source_ref: ${{ inputs.source_ref }}
       manager: ${{ matrix.manager }}
       manager_ref: ""
@@ -235,17 +244,26 @@ jobs:
       - name: Create ZIP-only draft release
         env:
           KERNEL_SOURCE: ${{ inputs.kernel_source }}
+          DEVICE: ${{ inputs.device }}
         run: |
           source_slug="${KERNEL_SOURCE:-melt}"
           source_slug="$(printf '%s' "${source_slug}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
           [[ -n "${source_slug}" ]] || source_slug="melt"
+          device_slug="${DEVICE:-marble}"
+          device_slug="$(printf '%s' "${device_slug}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+          [[ -n "${device_slug}" ]] || device_slug="marble"
           display="${source_slug}"
           if [[ -f config/kernel-sources.json ]]; then
             display="$(KERNEL_SOURCE="${KERNEL_SOURCE}" python3 -c "import json,os; p=json.load(open('config/kernel-sources.json',encoding='utf-8')); print(p.get(os.environ.get('KERNEL_SOURCE',''),{}).get('display') or '')")"
             [[ -n "${display}" ]] || display="${source_slug}"
           fi
+          kernel_title="Marble Kernel"
+          if [[ -f config/devices.json ]]; then
+            kernel_title="$(DEVICE="${DEVICE}" python3 -c "import json,os; d=json.load(open('config/devices.json',encoding='utf-8')); print(d.get(os.environ.get('DEVICE',''),{}).get('kernel_title') or '')")"
+            [[ -n "${kernel_title}" ]] || kernel_title="Marble Kernel"
+          fi
 
-          tag="marble-${source_slug}-r${GITHUB_RUN_NUMBER}"
+          tag="${device_slug}-${source_slug}-r${GITHUB_RUN_NUMBER}"
           if gh release view "${tag}" >/dev/null 2>&1; then
             echo "::error::Release ${tag} already exists"
             exit 1
@@ -270,5 +288,5 @@ jobs:
           gh release create "${tag}" "${release_assets[@]}" \
             --draft \
             --target "${GITHUB_SHA}" \
-            --title "Marble Kernel · ${display} · r${GITHUB_RUN_NUMBER}" \
+            --title "${kernel_title} · ${display} · r${GITHUB_RUN_NUMBER}" \
             --notes-file "${notes_file}"

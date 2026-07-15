@@ -7,6 +7,7 @@ BUILD_SCOPE="${BUILD_SCOPE:-image-only}"
 SOURCE_REPO="${SOURCE_REPO:-}"
 SOURCE_REF="${SOURCE_REF:-}"
 KERNEL_SOURCE="${KERNEL_SOURCE:-}"
+DEVICE="${DEVICE:-marble}"
 SUSFS_VERSION="${SUSFS_VERSION:-v2.2.0}"
 SUSFS_KERNEL_BRANCH="${SUSFS_KERNEL_BRANCH:-gki-android12-5.10}"
 SUSFS_REF="${SUSFS_REF:-}"
@@ -18,12 +19,33 @@ case "${MANAGER}" in
   *) echo "::error::Unsupported manager: ${MANAGER}"; exit 1 ;;
 esac
 
+if [[ ! -f config/devices.json ]]; then
+  echo "::error::config/devices.json is missing"
+  exit 1
+fi
+if ! DEVICE="${DEVICE}" python3 - config/devices.json <<'PY'
+import json
+import os
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    devices = json.load(fh)
+device = os.environ["DEVICE"]
+if device not in devices:
+    print(f"::error::Unsupported device: {device}", file=sys.stderr)
+    print("Allowed: " + ", ".join(sorted(devices)), file=sys.stderr)
+    sys.exit(1)
+PY
+then
+  exit 1
+fi
+
 if [[ -n "${KERNEL_SOURCE}" ]]; then
   if [[ ! -f config/kernel-sources.json ]]; then
     echo "::error::config/kernel-sources.json is missing"
     exit 1
   fi
-  if ! KERNEL_SOURCE="${KERNEL_SOURCE}" python3 - config/kernel-sources.json <<'PY'
+  if ! KERNEL_SOURCE="${KERNEL_SOURCE}" DEVICE="${DEVICE}" python3 - config/kernel-sources.json <<'PY'
 import json
 import os
 import sys
@@ -31,9 +53,17 @@ import sys
 with open(sys.argv[1], encoding="utf-8") as fh:
     presets = json.load(fh)
 kernel_source = os.environ["KERNEL_SOURCE"]
+device = os.environ["DEVICE"]
 if kernel_source not in presets:
     print(f"::error::Unsupported kernel_source: {kernel_source}", file=sys.stderr)
     print("Allowed: " + ", ".join(sorted(presets)), file=sys.stderr)
+    sys.exit(1)
+supported = presets[kernel_source].get("supported_devices") or ["marble"]
+if device not in supported:
+    print(
+        f"::error::kernel_source {kernel_source} does not support device {device} (supported: {', '.join(supported)})",
+        file=sys.stderr,
+    )
     sys.exit(1)
 PY
   then

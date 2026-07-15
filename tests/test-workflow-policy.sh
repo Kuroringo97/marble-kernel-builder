@@ -165,6 +165,38 @@ grep -Fq 'kernel_source: ${{ inputs.kernel_source }}' "${matrix}" || {
   exit 1
 }
 
+grep -Fq 'device:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the device dropdown" >&2
+  exit 1
+}
+
+for device_option in marble mondrian; do
+  grep -Eq -- "^ +- ${device_option}\$" "${matrix}" || {
+    echo "FAIL: matrix workflow missing device option: ${device_option}" >&2
+    exit 1
+  }
+done
+
+grep -Fq 'device: ${{ inputs.device }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass device to build-core" >&2
+  exit 1
+}
+
+grep -Fq -- '-${{ inputs.device }}-' "${matrix}" || {
+  echo "FAIL: matrix concurrency group does not include device" >&2
+  exit 1
+}
+
+grep -Fq 'DEVICE: ${{ inputs.device }}' "${core}" || {
+  echo "FAIL: build-core does not export DEVICE from the device input" >&2
+  exit 1
+}
+
+[[ -f config/devices.json ]] || {
+  echo "FAIL: config/devices.json is missing" >&2
+  exit 1
+}
+
 grep -Fq 'scripts/resolve-kernel-source.sh' "${core}" || {
   echo "FAIL: build-core does not resolve kernel source presets" >&2
   exit 1
@@ -325,6 +357,7 @@ required_matrix_setup_tests=(
   'tests/test-manager-policy.sh'
   'tests/test-matrix-generator.sh'
   'tests/test-susfs-presets.sh'
+  'tests/test-devices.sh'
 )
 for setup_test in "${required_matrix_setup_tests[@]}"; do
   grep -Fq "${setup_test}" .github/workflows/build-matrix.yml || {
