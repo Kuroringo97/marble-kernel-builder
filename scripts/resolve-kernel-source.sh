@@ -4,6 +4,8 @@ set -euo pipefail
 KERNEL_SOURCE="${KERNEL_SOURCE:-melt}"
 # Optional override for branch/tag/commit. Empty means use the preset default.
 SOURCE_REF="${SOURCE_REF:-}"
+# Optional custom repo (owner/repo or github.com URL). Preset still supplies the recipe.
+SOURCE_REPO_OVERRIDE="${SOURCE_REPO_OVERRIDE:-}"
 DEVICE="${DEVICE:-marble}"
 
 if [[ ! -f config/kernel-sources.json ]]; then
@@ -17,9 +19,11 @@ fi
 
 resolved_env="$(
   KERNEL_SOURCE="${KERNEL_SOURCE}" SOURCE_REF="${SOURCE_REF}" DEVICE="${DEVICE}" \
+    SOURCE_REPO_OVERRIDE="${SOURCE_REPO_OVERRIDE}" \
     python3 - config/kernel-sources.json config/devices.json <<'PY'
 import json
 import os
+import re
 import shlex
 import sys
 
@@ -27,6 +31,7 @@ config_path = sys.argv[1]
 devices_path = sys.argv[2]
 kernel_source = os.environ.get("KERNEL_SOURCE", "melt")
 source_ref_override = os.environ.get("SOURCE_REF", "")
+repo_override = os.environ.get("SOURCE_REPO_OVERRIDE", "").strip()
 device = os.environ.get("DEVICE", "marble")
 
 with open(config_path, encoding="utf-8") as fh:
@@ -64,6 +69,16 @@ display = preset.get("display") or kernel_source
 author = preset.get("author") or display
 repo = preset.get("repo") or ""
 default_ref = preset.get("default_ref") or ""
+
+if repo_override:
+    m = re.fullmatch(
+        r"(?:https?://github\.com/|git@github\.com:)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?",
+        repo_override,
+    )
+    if not m:
+        print(f"::error::source_repo must be owner/repo or a github.com URL: {repo_override}", file=sys.stderr)
+        sys.exit(1)
+    repo = m.group(1)
 rom_label = preset.get("rom_label") or "HyperOS"
 rom_family = preset.get("rom_family") or ""
 rom_support = preset.get("rom_support") or ""
@@ -84,8 +99,9 @@ if rom_family_norm == "los" or kernel_source in ("lineageos", "evolution-x", "pa
 else:
     package_family = "MELT"
 
-resolved_ref = source_ref_override or default_ref
-if not resolved_ref:
+# Custom repo without an explicit ref checks out its default branch (empty ref).
+resolved_ref = source_ref_override or ("" if repo_override else default_ref)
+if not resolved_ref and not repo_override:
     print(
         f"::error::kernel_source {kernel_source} has no default_ref and SOURCE_REF is empty",
         file=sys.stderr,
@@ -199,7 +215,7 @@ fi
 echo "Resolved kernel source preset '${KERNEL_SOURCE}' (${KERNEL_SOURCE_AUTHOR})"
 echo "  device=${DEVICE}"
 echo "  repo=${SOURCE_REPO}"
-echo "  ref=${SOURCE_REF}"
+echo "  ref=${SOURCE_REF:-(repo default branch)}"
 echo "  rom_label=${SUPPORTED_ROM_LABEL}"
 echo "  defconfig_mode=${DEFCONFIG_MODE}"
 if [[ "${DEFCONFIG_MODE}" == "single" ]]; then

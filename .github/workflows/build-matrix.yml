@@ -59,6 +59,10 @@ on:
         description: "Override branch/tag/commit (empty = preset default)"
         required: false
         default: ""
+      source_repo:
+        description: "Custom GitHub kernel repo (owner/repo or URL; empty = preset)"
+        required: false
+        default: ""
       build_scope:
         description: Build target set
         type: choice
@@ -95,7 +99,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.device }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.kernel_source }}-${{ inputs.device }}-${{ inputs.toolchain }}-${{ inputs.lto }}-${{ inputs.enable_susfs }}-${{ inputs.build_scope }}-${{ inputs.source_repo }}
   cancel-in-progress: false
 
 jobs:
@@ -121,9 +125,11 @@ jobs:
             tests/test-manager-policy.sh \
             tests/test-matrix-generator.sh \
             tests/test-susfs-presets.sh \
-            tests/test-devices.sh
+            tests/test-devices.sh \
+            tests/test-custom-source.sh
           do
-            env -u SOURCE_REPO -u SOURCE_REF -u DEVICE -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
+            env -u SOURCE_REPO -u SOURCE_REF -u SOURCE_REPO_OVERRIDE -u DEVICE \
+              -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
           done
@@ -152,10 +158,13 @@ jobs:
       id-token: write
       attestations: write
     uses: ./.github/workflows/build-core.yml
+    secrets:
+      kernel_source_token: ${{ secrets.KERNEL_SOURCE_TOKEN }}
     with:
       kernel_source: ${{ inputs.kernel_source }}
       device: ${{ inputs.device }}
       source_ref: ${{ inputs.source_ref }}
+      source_repo: ${{ inputs.source_repo }}
       manager: ${{ matrix.manager }}
       manager_ref: ""
       enable_susfs: ${{ fromJSON(matrix.enable_susfs) }}

@@ -6,6 +6,7 @@ ENABLE_SUSFS="${ENABLE_SUSFS:-false}"
 BUILD_SCOPE="${BUILD_SCOPE:-image-only}"
 SOURCE_REPO="${SOURCE_REPO:-}"
 SOURCE_REF="${SOURCE_REF:-}"
+SOURCE_REPO_OVERRIDE="${SOURCE_REPO_OVERRIDE:-}"
 KERNEL_SOURCE="${KERNEL_SOURCE:-}"
 DEVICE="${DEVICE:-marble}"
 SUSFS_VERSION="${SUSFS_VERSION:-v2.2.0}"
@@ -101,7 +102,12 @@ if [[ -z "${SOURCE_REPO}" || ! "${SOURCE_REPO}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.
   exit 1
 fi
 
-if [[ -z "${SOURCE_REF}" || ! "${SOURCE_REF}" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+if [[ -z "${SOURCE_REF}" ]]; then
+  if [[ -z "${SOURCE_REPO_OVERRIDE}" ]]; then
+    echo "::error::SOURCE_REF contains invalid characters: ${SOURCE_REF}"
+    exit 1
+  fi
+elif [[ ! "${SOURCE_REF}" =~ ^[A-Za-z0-9._/-]+$ ]]; then
   echo "::error::SOURCE_REF contains invalid characters: ${SOURCE_REF}"
   exit 1
 fi

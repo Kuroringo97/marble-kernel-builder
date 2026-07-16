@@ -225,11 +225,14 @@ Do **not** enable SUSFS with `none` or `kernelsu`.
 | `kernel_source` | `melt` | Dropdown: `melt` · `lineageos` · `evolution-x` · `pablo` |
 | `device` | `marble` | `marble` · `mondrian` (mondrian: `lineageos` preset only) |
 | `source_ref` | *(empty)* | Optional branch/tag/commit override (preset default if empty) |
+| `source_repo` | *(empty)* | Custom GitHub kernel repo (`owner/repo` or URL); preset still supplies defconfig/fragments/device policy; empty `source_ref` = repo default branch |
 | `build_scope` | `image-only` | `image-only` or `full` |
 | `toolchain` | `android-r416183b` | `android-r416183b` (default) or experimental `llvm-22.1.8` |
 | `lto` | `thin` | Clang LTO mode: `none` · `thin` (default, free-runner safe) · `full` (needs more RAM) |
 | `enable_ccache` | `true` | ccache (4 GiB Melt / 6 GiB LLVM) + ThinLTO Actions cache when `lto=thin` |
 | `create_draft_release` | `false` | Create one ZIP-only draft release after a full success |
+
+> Private `source_repo`: add repo secret `KERNEL_SOURCE_TOKEN` (PAT with read access to the kernel repo). The custom tree must match the chosen preset's layout.
 
 </details>
 

@@ -268,7 +268,7 @@ There is **no** separate single-build dispatch. One manager or many managers bot
 **Concurrency group** (no cancel-in-progress):
 
 ```text
-workflow + ref + kernel_source + lto + enable_susfs + build_scope
+workflow + ref + kernel_source + device + toolchain + lto + enable_susfs + build_scope + source_repo
 ```
 
 Parallel matrix builds of different managers share the group key only when those inputs match; same config re-runs wait rather than cancel each other.
@@ -284,6 +284,7 @@ Parallel matrix builds of different managers share the group key only when those
 | `kernel_source` | choice | `melt` | `melt` · `lineageos` · `evolution-x` · `pablo` |
 | `device` | choice | `marble` | `marble` · `mondrian` — preset must list it in `supported_devices` |
 | `source_ref` | string | empty | Override preset branch/tag/commit |
+| `source_repo` | string | empty | Custom GitHub kernel repo (`owner/repo`/URL); preset keeps recipe; private via `KERNEL_SOURCE_TOKEN` secret |
 | `build_scope` | choice | `image-only` | `image-only` · `full` |
 | `toolchain` | choice | `android-r416183b` | Or `llvm-22.1.8` (required for LOS armv9) |
 | `lto` | choice | `thin` | `none` · `thin` · `full` |

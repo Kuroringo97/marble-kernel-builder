@@ -6,6 +6,9 @@ on:
       flash_artifact_name:
         description: Uploaded flash artifact name
         value: ${{ jobs.build.outputs.flash_artifact_name }}
+    secrets:
+      kernel_source_token:
+        required: false
     inputs:
       kernel_source:
         required: true
@@ -15,6 +18,10 @@ on:
         type: string
         default: marble
       source_ref:
+        required: false
+        type: string
+        default: ""
+      source_repo:
         required: false
         type: string
         default: ""
@@ -83,6 +90,7 @@ jobs:
       KERNEL_SOURCE: ${{ inputs.kernel_source }}
       DEVICE: ${{ inputs.device }}
       SOURCE_REF: ${{ inputs.source_ref }}
+      SOURCE_REPO_OVERRIDE: ${{ inputs.source_repo }}
       MANAGER: ${{ inputs.manager }}
       MANAGER_REF: ${{ inputs.manager_ref }}
       ENABLE_SUSFS: ${{ inputs.enable_susfs }}
@@ -109,7 +117,8 @@ jobs:
         if: ${{ inputs.run_policy_tests }}
         run: |
           for test_script in tests/test-*.sh; do
-            env -u SOURCE_REPO -u SOURCE_REF -u KERNEL_SOURCE -u DEVICE -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
+            env -u SOURCE_REPO -u SOURCE_REF -u SOURCE_REPO_OVERRIDE -u KERNEL_SOURCE -u DEVICE \
+              -u MANAGER -u MANAGER_REF -u ENABLE_SUSFS \
               -u SUSFS_VERSION -u SUSFS_KERNEL_BRANCH -u SUSFS_REF -u SUSFS_EXPECTED_VERSION \
               bash "${test_script}"
           done
@@ -129,6 +138,7 @@ jobs:
         with:
           repository: ${{ steps.kernel-source.outputs.source_repo }}
           ref: ${{ steps.kernel-source.outputs.source_ref }}
+          token: ${{ secrets.kernel_source_token || github.token }}
           path: kernel-source
           fetch-depth: 1
           persist-credentials: false
@@ -360,7 +370,7 @@ jobs:
             echo "base_defconfig=${BASE_DEFCONFIG:-}"
             echo "config_fragments=${CONFIG_FRAGMENTS:-}"
             echo "source_repo=${SOURCE_REPO}"
-            echo "source_ref=${SOURCE_REF}"
+            echo "source_ref=${SOURCE_REF:-$(git -C kernel-source rev-parse --abbrev-ref HEAD)}"
             echo "source_commit=$(git -C kernel-source rev-parse HEAD)"
             echo "workflow_run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             echo "runner_image_os=${ImageOS:-unknown}"

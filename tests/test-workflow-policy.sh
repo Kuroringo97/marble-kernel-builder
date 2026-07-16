@@ -182,6 +182,36 @@ grep -Fq 'device: ${{ inputs.device }}' "${matrix}" || {
   exit 1
 }
 
+grep -Fq 'source_repo:' "${matrix}" || {
+  echo "FAIL: matrix workflow does not expose the source_repo input" >&2
+  exit 1
+}
+
+grep -Fq 'source_repo: ${{ inputs.source_repo }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass source_repo to build-core" >&2
+  exit 1
+}
+
+grep -Fq 'kernel_source_token: ${{ secrets.KERNEL_SOURCE_TOKEN }}' "${matrix}" || {
+  echo "FAIL: matrix workflow does not pass the kernel source token secret" >&2
+  exit 1
+}
+
+grep -Fq 'SOURCE_REPO_OVERRIDE: ${{ inputs.source_repo }}' "${core}" || {
+  echo "FAIL: build-core does not export SOURCE_REPO_OVERRIDE" >&2
+  exit 1
+}
+
+grep -Fq 'kernel_source_token:' "${core}" || {
+  echo "FAIL: build-core does not declare the kernel_source_token secret" >&2
+  exit 1
+}
+
+grep -Fq 'token: ${{ secrets.kernel_source_token || github.token }}' "${core}" || {
+  echo "FAIL: kernel checkout does not use the kernel source token fallback" >&2
+  exit 1
+}
+
 grep -Fq -- '-${{ inputs.device }}-' "${matrix}" || {
   echo "FAIL: matrix concurrency group does not include device" >&2
   exit 1
@@ -358,6 +388,7 @@ required_matrix_setup_tests=(
   'tests/test-matrix-generator.sh'
   'tests/test-susfs-presets.sh'
   'tests/test-devices.sh'
+  'tests/test-custom-source.sh'
 )
 for setup_test in "${required_matrix_setup_tests[@]}"; do
   grep -Fq "${setup_test}" .github/workflows/build-matrix.yml || {
@@ -415,7 +446,7 @@ grep -Fq 'package-ecosystem: github-actions' .github/dependabot.yml || {
   exit 1
 }
 
-for pattern in 'bash tests/test-*.sh' 'bash -n scripts/*.sh scripts/lib/*.sh tests/*.sh' 'actionlint' 'shellcheck -e SC1090,SC1091,SC2016,SC2153,SC2154'; do
+for pattern in 'for test_script in tests/test-*.sh' 'bash -n scripts/*.sh scripts/lib/*.sh tests/*.sh' 'actionlint' 'shellcheck -e SC1090,SC1091,SC2016,SC2153,SC2154'; do
   grep -Fq "${pattern}" "${preflight}" || {
     echo "FAIL: preflight workflow missing pattern: ${pattern}" >&2
     exit 1
